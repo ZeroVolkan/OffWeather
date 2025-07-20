@@ -2,25 +2,11 @@ import flet as ft
 
 
 def main(page: ft.Page):
-    counter = ft.Text("0", size=50, data=0)
+    t = ft.Text(value="Hello, world!", size=40)
+    page.controls.append(t)  # type: ignore[attr-defined]
+    t2 = ft.Text(value="Hello, world!", size=40)
+    page.controls.append(t2) # type: ignore[attr-defined]
+    page.update()
 
-    def increment_click(e):
-        counter.data = (counter.data or 0) + 1
-        counter.value = str(counter.data)
-        counter.update()
-
-    page.floating_action_button = ft.FloatingActionButton(
-        icon=ft.Icons.ADD, on_click=increment_click
-    )
-    page.add(
-        ft.SafeArea(
-            ft.Container(
-                counter,
-                alignment=ft.alignment.center,
-            ),
-            expand=True,
-        )
-    )
-
-
-ft.app(main)
+if __name__ == "__main__":
+    ft.app(main)
