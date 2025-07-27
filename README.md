@@ -33,42 +33,29 @@ flet build windows -v # Windows
 
 ## Архитектура системы
 
-```mermaid%%{init: {'theme':'dark'}}%%
+```mermaid
+%%{init: {'theme':'dark'}}%%
 graph TD
-    A[👤 User Interface<br/>Информационные блоки] --> B[🎯 Presenter<br/>Обработка событий]
-    B --> C{🔧 WeatherAPI<br/>Abstract Class}
-    C --> D[🌐 OpenWeatherAPI<br/>Конкретная реализация]
-    C --> E[🌤️ AccuWeatherAPI<br/>Конкретная реализация]
+    A["👤 User Interface<br/>Информационные блоки"] --> B["🎯 Presenter<br/>Обработка событий"]
+    B --> C{"🔧 WeatherAPI<br/>Abstract Class"}
+    C --> D["🌐 OpenWeatherAPI<br/>Конкретная реализация"]
+    C --> E["🌤️ AccuWeatherAPI<br/>Конкретная реализация"]
 
-    D --> F[📊 CurrentWeatherEndpoint<br/>Текущая погода]
-    D --> G[🔮 ForecastEndpoint<br/>Прогноз]
-    D --> H[📈 HistoricalEndpoint<br/>История]
+    D --> F["📊 CurrentWeatherEndpoint<br/>Текущая погода"]
+    D --> G["🔮 ForecastEndpoint<br/>Прогноз"]
+    D --> H["📈 HistoricalEndpoint<br/>История"]
 
-    E --> I[📊 CurrentWeatherEndpoint<br/>Текущая погода]
-    E --> J[🔮 ForecastEndpoint<br/>Прогноз]
-    E --> K[📈 HistoricalEndpoint<br/>История]
+    E --> I["📊 CurrentWeatherEndpoint<br/>Текущая погода"]
+    E --> J["🔮 ForecastEndpoint<br/>Прогноз"]
+    E --> K["📈 HistoricalEndpoint<br/>История"]
 
-    F --> L[☁️ OpenWeather API]
+    F --> L["☁️ OpenWeather API"]
     G --> L
     H --> L
 
-    I --> M[🌦️ AccuWeather API]
+    I --> M["🌦️ AccuWeather API"]
     J --> M
     K --> M
-
-    style A fill:#1a1a2e,stroke:#16213e,color:#eee
-    style B fill:#16213e,stroke:#0f3460,color:#eee
-    style C fill:#0f3460,stroke:#e94560,stroke-width:3px,color:#eee
-    style D fill:#533483,stroke:#7209b7,color:#eee
-    style E fill:#533483,stroke:#7209b7,color:#eee
-    style F fill:#2d4a4a,stroke:#4a6741,color:#eee
-    style G fill:#2d4a4a,stroke:#4a6741,color:#eee
-    style H fill:#2d4a4a,stroke:#4a6741,color:#eee
-    style I fill:#2d4a4a,stroke:#4a6741,color:#eee
-    style J fill:#2d4a4a,stroke:#4a6741,color:#eee
-    style K fill:#2d4a4a,stroke:#4a6741,color:#eee
-    style L fill:#4a1a2e,stroke:#e94560,color:#eee
-    style M fill:#4a1a2e,stroke:#e94560,color:#eee
 ```
 
 ## Принцип работы
