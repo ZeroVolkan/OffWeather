@@ -1,10 +1,8 @@
 import requests
 from requests_cache import CachedSession
 from retry_requests import retry
-from typing import Any
 
-from api import WeatherAPI, WeatherEndpoint, WeatherProcessor
-from xml import sax
+from api import WeatherAPI, WeatherEndpoint
 
 
 class OpenMeteoAPI(WeatherAPI):
