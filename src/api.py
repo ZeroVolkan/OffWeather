@@ -1,17 +1,18 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import final
+from typing import final, Any
 
 
 class WeatherAPI(ABC):
     @final
-    def __init__(self, api, **kwargs):
+    def __init__[T: Any](self, config: Any, **kwargs):
         self.endpoints: dict[str, WeatherEndpoint] = {}
         self.processors: dict[str, WeatherProcessor] = {}
-        self.setup(api, **kwargs)
+        self.setup(config, **kwargs)
+
 
     @abstractmethod
-    def setup(self, api, **kwargs):
+    def setup(self, config, **kwargs):
         """
             Настройка конкретной реализации API.
 
@@ -81,22 +82,35 @@ class WeatherAPI(ABC):
         """Меняет настройки API"""
         pass
 
-class WeatherEndpoint(ABC):
-    def __init__(self):
+class WeatherEndpoint[T: WeatherAPI](ABC):
+    @final
+    def __init__(self, api: T, **kwargs):
         self.name: str = self.__class__.__name__
+        self.api: T = api
         self.data = []
+        self.setup(**kwargs)
+
+    @abstractmethod
+    def setup(self, **kwargs):
+        pass
 
     @abstractmethod
     def refresh(self):
         """Обновляет данные у переменных данных, которые хранят данные погоды"""
         pass
 
-class WeatherProcessor(ABC):
+class WeatherProcessor[T: WeatherAPI](ABC):
+    @final
     def __init__(self):
         self.name: str = self.__class__.__name__
         self.data = []
 
     @abstractmethod
-    def run(self, endpoints: dict[str, WeatherEndpoint]):
+    def setup(self, **kwargs):
+        """Меняет настройки API"""
+        pass
+
+    @abstractmethod
+    def run(self, endpoints: dict[str, T]):
         """Обрабатывает данные из endpoints и передает в единую модель данных"""
         pass
