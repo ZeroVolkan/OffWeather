@@ -2,6 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import final, Any
 
+from loguru import logger
 
 class WeatherAPI(ABC):
     @final
@@ -68,12 +69,14 @@ class WeatherAPI(ABC):
     @final
     def refresh(self):
         """Обновляет данные у всех endpoints"""
+        logger.info(f"Refreshing endpoints {self.__class__.__name__}")
         for endpoint in self.endpoints.values():
             endpoint.refresh()
 
     @final
     def process(self):
         """Обрабатывают данныe из endpoints и передают в единую модель данных"""
+        logger.info(f"Processing data from endpoints {self.__class__.__name__}")
         for processor in self.processors.values():
             processor.run(self.endpoints)
 

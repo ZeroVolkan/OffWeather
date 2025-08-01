@@ -7,10 +7,12 @@ requires-python = ">=3.12"
 authors = [{ name = "Volkan", email = "zerovolkan@proton.my" }]
 dependencies = [
     "flet==0.28.3",
+    "loguru>=0.7.3",
     "pydantic>=2.11.7",
     "requests>=2.32.4",
     "requests-cache>=1.2.1",
     "retry-requests>=2.0.0",
+    "urllib3>=2.5.0",
 ]
 
 [tool.flet]
