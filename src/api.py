@@ -85,12 +85,18 @@ class WeatherAPI(ABC):
         """Меняет настройки API"""
         pass
 
+    @abstractmethod
+    def check(self):
+        """Проверяет настройки API"""
+        pass
+
 class WeatherEndpoint[T: WeatherAPI](ABC):
     @final
     def __init__(self, api: T, **kwargs):
         self.name: str = self.__class__.__name__
         self.api: T = api
-        self.data = []
+        self.data: dict[str, Any] = {}
+        self.check(**kwargs)
         self.setup(**kwargs)
 
     @abstractmethod
@@ -100,6 +106,11 @@ class WeatherEndpoint[T: WeatherAPI](ABC):
     @abstractmethod
     def refresh(self):
         """Обновляет данные у переменных данных, которые хранят данные погоды"""
+        pass
+
+    @abstractmethod
+    def check(self, **kwargs):
+        """Проверяет настройки Endpoint"""
         pass
 
 class WeatherProcessor[T: WeatherAPI](ABC):

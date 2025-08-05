@@ -9,6 +9,7 @@ dependencies = [
     "flet==0.28.3",
     "loguru>=0.7.3",
     "pydantic>=2.11.7",
+    "pytest>=8.4.1",
     "requests>=2.32.4",
     "requests-cache>=1.2.1",
     "retry-requests>=2.0.0",

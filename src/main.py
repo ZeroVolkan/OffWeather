@@ -9,7 +9,7 @@ def main(page: ft.Page):
     page.update()
 
 def init_loguru():
-    logger.add("file.log")
+    logger.add(".log/file.log")
 
 if __name__ == "__main__":
     ft.app(main)
