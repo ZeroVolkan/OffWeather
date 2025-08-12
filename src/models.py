@@ -1,8 +1,10 @@
 from pydantic import BaseModel
 
+
 # TEMP:
 class Weather(BaseModel):
     pass
+
 
 class CurrentWeather(BaseModel):
     temperature: float

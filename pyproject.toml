@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 authors = [{ name = "Volkan", email = "zerovolkan@proton.my" }]
 dependencies = [
+    "click>=8.2.1",
     "flet==0.28.3",
     "loguru>=0.7.3",
     "pydantic>=2.11.7",

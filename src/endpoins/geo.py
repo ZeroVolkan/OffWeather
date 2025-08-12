@@ -3,15 +3,27 @@ from loguru import logger
 
 import requests
 
-class GeoEndpoint(WeatherEndpoint):
-    def setup(self, **kwargs):
+
+class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
+    def __init__(
+        self,
+        api: OpenMeteoAPI,
+        id: int | None = None,
+        city: str | None = None,
+        language: str | None = None,
+        country: str | None = None,
+        count: int | None = None,
+    ):
+
         self.url = "https://geocoding-api.open-meteo.com/v1/search"
 
-        self.id = kwargs.get("id", None)
-        self.city = kwargs.get("city", None)
-        self.language = kwargs.get("language", "en")
-        self.country = kwargs.get("country", None)
-        self.count = kwargs.get("count", 10)
+        self.id = id
+        self.city = city
+        self.language = language
+        self.country = country
+        self.count = count
+
+        super().__init__(api)
 
 
     def refresh(self, forced: bool = False):
@@ -21,7 +33,7 @@ class GeoEndpoint(WeatherEndpoint):
             "name": self.city,
             "language": self.language,
             "country": self.country,
-            "count": self.count
+            "count": self.count,
         }
 
         responce = session.get(self.url, params=params)
@@ -36,15 +48,14 @@ class GeoEndpoint(WeatherEndpoint):
         else:
             for result in response_data["results"]:
                 if self.id == result["id"]:
-                   self.data = result
-                   break
+                    self.data = result
+                    break
 
-
-    def check(self, **kwargs):
+    def check(self):
         """Проверяет настройки Endpoint"""
-        if not self.id and not self.city:
-            logger.error("Не указаны id или город")
-            raise ValueError("Не указаны id или город")
+        if self.id is None and self.city is None:
+            logger.error("id or city not specified")
+            raise ValueError("id or city not specified")
 
     def select_id(self, id: int | None = None):
         self.id = id

@@ -8,44 +8,46 @@ from api import WeatherAPI
 from endpoins.forecast import ForecastEndpoint
 from endpoins.geo import GeoEndpoint
 
+
 class OpenMeteoAPI(WeatherAPI):
-    def setup(self, config, **kwargs):
-        self.config = config
-        self.kwargs = kwargs
+    def __init__(
+        self,
+        id: int | None = None,
+        city: str | None = None,
+        language: str | None = None,
+        country: str | None = None,
+        count: int | None = None,
+    ):
+        super().__init__()
 
         self.session: requests.Session = retry(
-            CachedSession(".cache/", expire_after = 3600),
-            retries = 5, backoff_factor = 0.2
+            CachedSession(".cache/", expire_after=3600), retries=5, backoff_factor=0.2
         )
 
         try:
-            self.add_endpoint(GeoEndpoint(self))
+            self.add_endpoint(
+                GeoEndpoint(
+                    self,
+                    id=id,
+                    city=city,
+                    language=language,
+                    country=country,
+                    count=count,
+                )
+            )
 
-            self.endpoints["GeoEndpoint"].data["city"]
-
-
-            self.add_endpoint(ForecastEndpoint(self))
+            # self.add_endpoint(ForecastEndpoint(self, latitude=0., longitude=0.))
         except Exception as e:
-            logger.error(f"Ошибка при проверке настроек API: {e}")
-            raise ValueError("Ошибка при проверке настроек API") # Temporaly
+            logger.error(f"Error settings API: {e}")
+            raise ValueError("Error settings API")
 
     def setting(self, resetup: bool = False, **kwargs):
         """Меняет настройки API"""
         for key, value in kwargs.items():
-            self.kwargs[key] = value
+            self.__dict__[key] = value
         if resetup:
-            self.setup(self.config, **self.kwargs)
+            self.__init__(**self.__dict__)
 
     def check(self, **kwargs):
         """Проверяет настройки API"""
-        if not self.config:
-            logger.error("Не указаны настройки API")
-            raise ValueError("Не указаны или не верные настройки API")
-
-
-# TEMPORALY TESTING
-if __name__ == "__main__":
-    from main import init_loguru
-    init_loguru()
-    api = OpenMeteoAPI("None")
-    api.refresh()
+        pass

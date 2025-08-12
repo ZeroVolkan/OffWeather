@@ -4,24 +4,12 @@ from typing import final, Any
 
 from loguru import logger
 
+
 class WeatherAPI(ABC):
-    @final
-    def __init__[T: Any](self, config: Any, **kwargs):
+    @abstractmethod
+    def __init__(self, **kwargs):
         self.endpoints: dict[str, WeatherEndpoint] = {}
         self.processors: dict[str, WeatherProcessor] = {}
-        self.setup(config, **kwargs)
-
-
-    @abstractmethod
-    def setup(self, config, **kwargs):
-        """
-            Настройка конкретной реализации API.
-
-            Args:
-                api: API ключ или конфигурация
-                **kwargs: Дополнительные параметры настройки
-        """
-        pass
 
     @final
     def add_endpoint(self, endpoint: WeatherEndpoint):
@@ -29,7 +17,6 @@ class WeatherAPI(ABC):
         if endpoint.name in self.endpoints:
             raise ValueError(f"Endpoint with name '{endpoint.name}' already exists")
         self.endpoints[endpoint.name] = endpoint
-
 
     @final
     def delete_endpoint(self, endpoint: WeatherEndpoint):
@@ -90,18 +77,15 @@ class WeatherAPI(ABC):
         """Проверяет настройки API"""
         pass
 
+
 class WeatherEndpoint[T: WeatherAPI](ABC):
-    @final
-    def __init__(self, api: T, **kwargs):
+    @abstractmethod
+    def __init__(self, api: T):
         self.name: str = self.__class__.__name__
         self.api: T = api
         self.data: dict[str, Any] = {}
-        self.check(**kwargs)
-        self.setup(**kwargs)
-
-    @abstractmethod
-    def setup(self, **kwargs):
-        pass
+        logger.info(f"Initialized endpoint {self.name} with attributes {self.__dict__}")
+        self.check()
 
     @abstractmethod
     def refresh(self):
@@ -109,20 +93,15 @@ class WeatherEndpoint[T: WeatherAPI](ABC):
         pass
 
     @abstractmethod
-    def check(self, **kwargs):
+    def check(self):
         """Проверяет настройки Endpoint"""
         pass
 
+
 class WeatherProcessor[T: WeatherAPI](ABC):
-    @final
-    def __init__(self):
+    def __init__(self, **kwargs):
         self.name: str = self.__class__.__name__
         self.data = []
-
-    @abstractmethod
-    def setup(self, **kwargs):
-        """Меняет настройки API"""
-        pass
 
     @abstractmethod
     def run(self, endpoints: dict[str, T]):
