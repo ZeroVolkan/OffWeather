@@ -3,7 +3,8 @@ from typing import Union
 import toml
 import os
 
-class Setting():
+
+class Setting:
     def __init__(self, file_path):
         """Initialize settings by loading data from a TOML file."""
         self.file_path = file_path
@@ -12,10 +13,10 @@ class Setting():
     def load(self):
         """Load and return data from the TOML file."""
         if not os.path.exists(self.file_path):
-            with open(self.file_path, 'w') as file:
+            with open(self.file_path, "w") as file:
                 toml.dump({}, file)
 
-        with open(self.file_path, 'r') as file:
+        with open(self.file_path, "r") as file:
             return toml.load(file)
 
     def save(self, obj, path: list[str]):
@@ -48,8 +49,29 @@ class Setting():
             self.data.update(obj_data)
 
         # Записываем в файл
-        with open(self.file_path, 'w') as file:
+        with open(self.file_path, "w") as file:
             toml.dump(self.data, file)
+
+    def _cast_value(self, value, annotation):
+        """Привести значение к типу аннотации (учитывая Union и None)."""
+        if value is None:
+            return None
+
+        # Обработка Union и types.UnionType
+        if hasattr(annotation, "__origin__") and annotation.__origin__ is Union:
+            return self._cast_union(value, annotation.__args__)
+        if hasattr(annotation, "__args__"):  # Python 3.10+
+            return self._cast_union(value, annotation.__args__)
+
+        # Обычный тип
+        return annotation(value)
+
+    def _cast_union(self, value, args):
+        """Найти первый не-None тип из Union и привести значение."""
+        for arg in args:
+            if arg is not type(None):
+                return arg(value)
+        return None
 
     def fetch(self, obj: Callable, path: list[str]):
         """Fetch values from a TOML path and cast them to types from a class's annotations."""
@@ -58,42 +80,19 @@ class Setting():
             for i in path:
                 select = select[i]
         except KeyError:
-            # Если путь не существует, возвращаем объект с дефолтными значениями
             return obj()
 
-        kwargs = {}
-        if "__annotations__" in obj.__dict__:
-            for name, annotation in obj.__annotations__.items():
-                if name in select:
-                    value = select[name]
-                    # Если значение None, оставляем его как None
-                    if value is None:
-                        kwargs[name] = None
-                    else:
-                        # Обрабатываем Union типы (например, str | None)
-                        if hasattr(annotation, '__origin__') and annotation.__origin__ is Union:
-                            # Для Union типов берем первый не-None тип
-                            for arg in annotation.__args__:
-                                if arg is not type(None):
-                                    kwargs[name] = arg(value)
-                                    break
-                        elif hasattr(annotation, '__args__'):  # Для types.UnionType в Python 3.10+
-                            # Берем первый не-None тип из Union
-                            for arg in annotation.__args__:
-                                if arg is not type(None):
-                                    kwargs[name] = arg(value)
-                                    break
-                        else:
-                            # Обычный тип
-                            kwargs[name] = annotation(value)
-                # Если ключа нет в данных, не добавляем его в kwargs (будет использовано значение по умолчанию)
-        else:
+        if "__annotations__" not in obj.__dict__:
             raise TypeError("Class don't have __annotation__")
+
+        kwargs = {}
+        for name, annotation in obj.__annotations__.items():
+            if name in select:
+                kwargs[name] = self._cast_value(select[name], annotation)
 
         if hasattr(obj, "__init__") and obj.__init__ is not object.__init__:
             return obj(**kwargs)
-        else:
-            raise TypeError(f"{obj.__name__} doesn't have a usable __init__")
+        raise TypeError(f"{obj.__name__} doesn't have a usable __init__")
 
     def add(self, key, value):
         """Add a new key-value pair to settings and save."""
@@ -107,7 +106,7 @@ class Setting():
 
     def _save_file(self):
         """Internal method to save current data to the TOML file."""
-        with open(self.file_path, 'w') as file:
+        with open(self.file_path, "w") as file:
             toml.dump(self.data, file)
 
     def __str__(self):

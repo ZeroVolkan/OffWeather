@@ -9,7 +9,7 @@ class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
         self,
         api: OpenMeteoAPI,
         latitude: float | None = None,
-        longitude: float | None = None
+        longitude: float | None = None,
     ):
         super().__init__(api)
         self.url = "https://api.open-meteo.com/v1/forecast"
@@ -63,9 +63,7 @@ class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
             self.data = {"current": current, "daily": daily}
 
         else:
-            logger.error(
-                f"{self.__class__.__name__} Error API: {response.status_code}"
-            )
+            logger.error(f"{self.__class__.__name__} Error API: {response.status_code}")
 
     def check(self, **kwargs):
         """Проверяет настройки Endpoint"""

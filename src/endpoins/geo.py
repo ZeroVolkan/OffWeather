@@ -14,7 +14,6 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
         country: str | None = None,
         count: int | None = None,
     ):
-
         self.url = "https://geocoding-api.open-meteo.com/v1/search"
 
         self.id = id
@@ -24,7 +23,6 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
         self.count = count
 
         super().__init__(api)
-
 
     def refresh(self, forced: bool = False):
         session: requests.Session = self.api.session
