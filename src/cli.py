@@ -41,36 +41,36 @@ class DebugShell(cmd.Cmd):
         logger.add(".log/debug.log")
         logger.info("Debug shell started")
 
-    def do_list_apis(self, args):
+    def do_list(self, args):
         """Показать доступные API"""
-        print("🌍 Доступные API:")
+        print("Avalible apis:")
         for api_name, api_info in exist_apis.items():
-            status = "✅ активен" if api_name == self.current_api else "⚫ доступен"
+            status = "Active" if api_name == self.current_api else "⚫ Avalible"
             print(f"  {api_name} ({api_info['class']}) - {status}")
 
-    def do_switch_api(self, api_name):
-        """Переключиться на API: switch_api open-meteo"""
+    def do_api(self, api_name):
+        """Setting to API: api open-meteo"""
         if not api_name or api_name not in exist_apis:
-            print(f"❌ Доступные API: {list(exist_apis)}")
+            print(f"❌ Avalible apis: {list(exist_apis)}")
             return
 
         self.current_api = api_name
         self.current_config_class = self._get_config_class(api_name)
-        logger.info(f"Switched to API: {api_name}")
-        print(f"🔄 Переключено на {api_name}")
+        logger.info(f"Setting to API: {api_name}")
+        print(f"Setting to {api_name}")
 
         # Загружаем конфигурацию для этого API
         try:
             self.config = self.setting.fetch(self.current_config_class, [api_name])
             logger.info(f"Config loaded for {api_name}")
-            print(f"✅ Конфигурация загружена")
+            print("Config loaded")
         except Exception as e:
             logger.warning(f"Config not found for {api_name}: {e}")
-            print(f"⚠️ Конфигурация не найдена, создана новая")
+            print("Config not found, created new")
             self.config = self.current_config_class()
 
     def _get_config_class(self, api_name):
-        """Получить класс конфигурации для API"""
+        """Get config class for API"""
         if api_name not in exist_apis:
             return OpenMeteoConfig
 
@@ -78,15 +78,15 @@ class DebugShell(cmd.Cmd):
         if api_info["config"] == "OpenMeteoConfig":
             return OpenMeteoConfig
         else:
-            # Для будущих API добавить здесь другие классы
+            # Для будущих API добавить здесь другие классы TEMP
             return OpenMeteoConfig
 
-    def do_load_config(self, api_name):
-        """Загрузить конфигурацию: load_config open-meteo"""
+    def do_config(self, api_name):
+        """Loading configuration: config open-meteo"""
         if not api_name:
             api_name = self.current_api
         if not api_name:
-            print("❌ Укажите API или используйте switch_api")
+            print("❌ Choice API, use api")
             return
 
         config_class = self._get_config_class(api_name)
@@ -95,21 +95,21 @@ class DebugShell(cmd.Cmd):
             self.config = self.setting.fetch(config_class, [api_name])
             self.current_config_class = config_class
             logger.info(f"Config loaded for {api_name}")
-            print(f"✅ Конфигурация загружена")
+            print("Configuration loaded")
         except Exception as e:
             logger.error(f"Error loading config: {e}")
-            print(f"❌ Ошибка: {e}")
+            print(f"❌ Error: {e}")
             self.config = config_class()
             self.current_config_class = config_class
 
-    def do_create_api(self, args):
-        """Создать API экземпляр"""
+    def do_up(self, args):
+        """Create API instance"""
         if not self.config:
-            print("❌ Сначала загрузите конфигурацию")
+            print("❌ First load configuration")
             return
 
         if not self.current_api:
-            print("❌ Сначала переключитесь на API")
+            print("❌ First switch to API")
             return
 
         try:
@@ -120,51 +120,51 @@ class DebugShell(cmd.Cmd):
                     language=self.config.language,
                     count=self.config.count,
                 )
-            # Здесь можно добавить другие API
+            # Here you can add other APIs
 
             logger.info(f"API instance created for {self.current_api}")
-            print("✅ API создан")
+            print("API created")
         except Exception as e:
             logger.error(f"Error creating API: {e}")
-            print(f"❌ Ошибка создания API: {e}")
+            print(f"❌ Error creating API: {e}")
 
     def do_refresh(self, args):
-        """Обновить данные API"""
+        """Refresh API"""
         if not self.api:
-            print("❌ Сначала создайте API")
+            print("❌ First create API")
             return
 
         try:
             self.api.refresh()
             logger.info("API data refreshed")
-            print("✅ Данные обновлены")
+            print("Data refreshed")
         except Exception as e:
             logger.error(f"Error refreshing API: {e}")
-            print(f"❌ Ошибка: {e}")
+            print(f"❌ Error refreshing API: {e}")
 
-    def do_show_data(self, endpoint):
-        """Показать данные: show_data GeoEndpoint"""
+    def do_endpoint(self, endpoint):
+        """Show data: show GeoEndpoint"""
         if not self.api:
-            print("❌ Сначала создайте API")
+            print("❌ First create API")
             return
 
         try:
             data = self.api.get_endpoint(endpoint or "GeoEndpoint").data
             logger.info(f"Data retrieved from {endpoint}")
-            print(f"📊 Данные {endpoint}: {data}")
+            print(f"Data {endpoint}: {data}")
         except Exception as e:
             logger.error(f"Error getting data from {endpoint}: {e}")
-            print(f"❌ Ошибка: {e}")
+            print(f"❌ Error getting data from {endpoint}: {e}")
 
     def do_set_config(self, args):
-        """Изменить параметр конфигурации: set_config city Moscow"""
+        """Change configuration parameter: set_config city Moscow"""
         if not self.config:
-            print("❌ Сначала загрузите конфигурацию")
+            print("❌ First load configuration")
             return
 
         parts = args.split(maxsplit=1)
         if len(parts) < 2:
-            print("❌ Использование: set_config <параметр> <значение>")
+            print("❌ Usage: set_config <parameter> <value>")
             return
 
         param, value = parts
@@ -174,47 +174,47 @@ class DebugShell(cmd.Cmd):
             try:
                 value = int(value)
             except ValueError:
-                print(f"❌ Неверное значение для count: {value}")
+                print(f"❌ Invalid value for count: {value}")
                 return
 
         if hasattr(self.config, param):
             setattr(self.config, param, value)
             logger.info(f"Config parameter {param} set to {value}")
-            print(f"✅ {param} = {value}")
+            print(f"{param} = {value}")
         else:
-            print(f"❌ Неизвестный параметр: {param}")
+            print(f"❌ Unknown parameter: {param}")
 
     def do_save_config(self, args):
-        """Сохранить конфигурацию"""
+        """Save configuration"""
         if not self.config:
-            print("❌ Нет конфигурации для сохранения")
+            print("❌ No configuration to save")
             return
 
         if not self.current_api:
-            print("❌ Не выбрано API")
+            print("❌ No API selected")
             return
 
         try:
             self.setting.save(self.config, [self.current_api])
             logger.info(f"Config saved for {self.current_api}")
-            print(f"✅ Конфигурация сохранена для {self.current_api}")
+            print(f"Configuration saved for {self.current_api}")
         except Exception as e:
             logger.error(f"Error saving config: {e}")
-            print(f"❌ Ошибка сохранения: {e}")
+            print(f"❌ Error saving: {e}")
 
     def do_status(self, args):
-        """Показать детальный статус"""
-        print("📊 Статус системы:")
-        print(f"  Текущий API: {self.current_api or 'не выбран'}")
+        """Show detailed status"""
+        print("Status: ")
+        print(f"  Current API: {self.current_api or 'not selected'}")
         if self.current_api and self.current_api in exist_apis:
             api_info = exist_apis[self.current_api]
-            print(f"    Класс API: {api_info['class']}")
-            print(f"    Конфиг: {api_info['config']}")
+            print(f"    API Class: {api_info['class']}")
+            print(f"    Config: {api_info['config']}")
 
-        print(f"  Конфигурация: {'загружена' if self.config else 'не загружена'}")
+        print(f"  Configuration: {'loaded' if self.config else 'not loaded'}")
         if self.config:
             print(
-                f"    Тип конфига: {self.current_config_class.__name__ if self.current_config_class else 'unknown'}"
+                f"    Config Type: {self.current_config_class.__name__ if self.current_config_class else 'unknown'}"
             )
             for field_name in self.config.__annotations__.keys():
                 field_value = getattr(self.config, field_name, "не найдено")
@@ -222,16 +222,21 @@ class DebugShell(cmd.Cmd):
                     field_value = "***скрыт***"
                 print(f"    {field_name}: {field_value or 'не установлен'}")
 
-        print(f"  API экземпляр: {'создан' if self.api else 'не создан'}")
+        print(f"  API instance: {'создан' if self.api else 'не создан'}")
         if self.api:
             print(
                 f"    Endpoints: {list(self.api.endpoints.keys()) if hasattr(self.api, 'endpoints') else 'н/д'}"
             )
 
-        print(f"  Доступные API: {len(exist_apis)} ({', '.join(exist_apis.keys())})")
+        print(f"  Avaliable API: {len(exist_apis)} ({', '.join(exist_apis.keys())})")
 
     def do_quit(self, args):
-        """Выход"""
+        """Exit"""
+        logger.info("Debug shell stopped")
+        return True
+
+    def do_q(self, args):
+        """Exit"""
         logger.info("Debug shell stopped")
         return True
 
@@ -244,7 +249,7 @@ def cli():
 
 @cli.command()
 def debug():
-    """Запустить debug shell"""
+    """Run debug shell"""
     DebugShell().cmdloop()
 
 
