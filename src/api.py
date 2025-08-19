@@ -68,7 +68,7 @@ class WeatherAPI(ABC):
             processor.run(self.endpoints)
 
     @abstractmethod
-    def setting(self, **kwargs):
+    def setting(self, resetup: bool = False, **kwargs):
         """Меняет настройки API"""
         pass
 
@@ -84,8 +84,21 @@ class WeatherEndpoint[T: WeatherAPI](ABC):
         self.name: str = self.__class__.__name__
         self.api: T = api
         self.data: dict[str, Any] = {}
+        self._association: dict[str, WeatherEndpoint] = {}
         logger.info(f"Initialized endpoint {self.name} with attributes {self.__dict__}")
         self.check()
+
+    @property
+    def association(self):
+        return self._association
+
+    @association.setter
+    def association(self, endpoint: WeatherEndpoint):
+        self._association[endpoint.name] = endpoint
+
+    @association.deleter
+    def association(self, endpoint: WeatherEndpoint):
+        del self._association[endpoint.name]
 
     @abstractmethod
     def refresh(self):

@@ -3,7 +3,7 @@ import click
 from loguru import logger
 from dataclasses import dataclass
 from setting import Setting
-from ometeo import OpenMeteoAPI
+from open_meteo.api import OpenMeteoAPI
 
 exist_apis = {
     "open-meteo": {
