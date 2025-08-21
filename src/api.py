@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import final, Any
-
+from pydantic import BaseModel
 from loguru import logger
 
 
@@ -65,7 +65,14 @@ class WeatherAPI(ABC):
         """Обрабатывают данныe из endpoints и передают в единую модель данных"""
         logger.info(f"Processing data from endpoints {self.__class__.__name__}")
         for processor in self.processors.values():
-            processor.run(self.endpoints)
+            processor.run()
+
+    @final
+    def save(self):
+        """Сохраняет данные в базу данных"""
+        logger.info(f"Saving data from processors {self.__class__.__name__}")
+        for processor in self.processors.values():
+            processor.save()
 
     @abstractmethod
     def setting(self, resetup: bool = False, **kwargs):
@@ -77,6 +84,10 @@ class WeatherAPI(ABC):
         """Проверяет настройки API"""
         pass
 
+    @abstractmethod
+    def up(self):
+        pass
+
 
 class WeatherEndpoint[T: WeatherAPI](ABC):
     @abstractmethod
@@ -84,21 +95,8 @@ class WeatherEndpoint[T: WeatherAPI](ABC):
         self.name: str = self.__class__.__name__
         self.api: T = api
         self.data: dict[str, Any] = {}
-        self._association: dict[str, WeatherEndpoint] = {}
         logger.info(f"Initialized endpoint {self.name} with attributes {self.__dict__}")
         self.check()
-
-    @property
-    def association(self):
-        return self._association
-
-    @association.setter
-    def association(self, endpoint: WeatherEndpoint):
-        self._association[endpoint.name] = endpoint
-
-    @association.deleter
-    def association(self, endpoint: WeatherEndpoint):
-        del self._association[endpoint.name]
 
     @abstractmethod
     def refresh(self):
@@ -107,16 +105,34 @@ class WeatherEndpoint[T: WeatherAPI](ABC):
 
     @abstractmethod
     def check(self):
-        """Проверяет настройки Endpoint"""
+        """Check Endpoint"""
         pass
 
 
 class WeatherProcessor[T: WeatherAPI](ABC):
     def __init__(self, **kwargs):
         self.name: str = self.__class__.__name__
+        self._associations: dict[str, WeatherProcessor] = {}
         self.data = []
 
     @abstractmethod
-    def run(self, endpoints: dict[str, T]):
-        """Обрабатывает данные из endpoints и передает в единую модель данных"""
+    def run(self):
+        """Обрабатывает данные из endpoints и передает в буфер для последующей обработки"""
         pass
+
+    @abstractmethod
+    def save(self):
+        """Сохраняет данные в базу данных"""
+        pass
+
+    @property
+    def associations(self):
+        return self._associations
+
+    @associations.setter
+    def associations(self, processor: WeatherProcessor):
+        self._associations[processor.name] = processor
+
+    @associations.deleter
+    def associations(self, processor: WeatherProcessor):
+        del self._associations[processor.name]

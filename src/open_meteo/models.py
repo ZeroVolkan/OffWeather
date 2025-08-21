@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from enum import Enum
-from typing import List, Union
+from models import Coordinates
 
 
 # ----- Enum кодов погоды -----
@@ -68,11 +68,6 @@ class WeatherCode(Enum):
 
 
 # ----- Запрос -----
-class Coordinates(BaseModel):
-    latitude: float
-    longitude: float
-
-
 class GeoRequest(BaseModel):
     id: int | None = None
     city: str
@@ -127,27 +122,4 @@ class DailyWeather(BaseModel):
 # ----- Основная модель -----
 class Weather(BaseModel):
     current: CurrentWeather
-    daily: List[DailyWeather]
-
-
-# ----- Варианты ответов -----
-class LocationOption(BaseModel):
-    id: int
-    city: str
-    country: str
-    coordinates: Coordinates
-
-
-class ClarificationResponse(BaseModel):
-    type: str = "clarification"
-    options: List[LocationOption]
-
-
-class FullDataResponse(BaseModel):
-    type: str = "data"
-    location: LocationOption
-    weather: Weather
-
-
-# ----- Универсальный ответ -----
-OpenMeteoResponse = Union[ClarificationResponse, FullDataResponse]
+    daily: list[DailyWeather]

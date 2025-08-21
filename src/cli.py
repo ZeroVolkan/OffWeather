@@ -142,7 +142,7 @@ class DebugShell(cmd.Cmd):
             logger.error(f"Error refreshing API: {e}")
             print(f"❌ Error refreshing API: {e}")
 
-    def do_endpoint(self, endpoint):
+    def do_show(self, endpoint):
         """Show data: show GeoEndpoint"""
         if not self.api:
             print("❌ First create API")
@@ -239,6 +239,15 @@ class DebugShell(cmd.Cmd):
         """Exit"""
         logger.info("Debug shell stopped")
         return True
+
+    def do_processors(self, args):
+        """List available processors"""
+        logger.info("Listing available processors")
+        if self.api:
+            print(f"Available processors: {list(self.api.processors.keys())}")
+        else:
+            print("No API instance created")
+
 
 
 @click.group()

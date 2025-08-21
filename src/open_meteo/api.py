@@ -5,6 +5,7 @@ from retry_requests import retry
 from loguru import logger
 
 from api import WeatherAPI
+from models import Coordinates
 from .forecast import ForecastEndpoint
 from .geo import GeoEndpoint
 
@@ -17,33 +18,39 @@ class OpenMeteoAPI(WeatherAPI):
         language: str | None = None,
         country: str | None = None,
         count: int | None = None,
+        coordinates: Coordinates | None = None
     ):
         super().__init__()
 
-        self._geo = None
+        self.id = id
+        self.city = city
+        self.language = language
+        self.country = country
+        self.count = count
+        self.coordinates = coordinates
 
         self.session: requests.Session = retry(
             CachedSession(".cache/", expire_after=3600), retries=5, backoff_factor=0.2
         )
 
+    def up(self):
+        self.check()
+
         try:
-            self.geo = GeoEndpoint(
-                self,
-                id=id,
-                city=city,
-                language=language,
-                country=country,
-                count=count,
-            )
-
-
             self.add_endpoint(
-                ForecastEndpoint(self,
-                latitude=0., longitude=0.)
+                GeoEndpoint(
+                self,
+                id=self.id,
+                city=self.city,
+                language=self.language,
+                country=self.country,
+                count=self.count,
+                )
             )
+            self.add_endpoint(ForecastEndpoint(self))
         except Exception as e:
-            logger.error(f"Error settings API: {e}")
-            raise ValueError("Error settings API")
+            logger.error(f"Unknown API error: {e}")
+            raise ValueError("Unknown API error")
 
     def setting(self, resetup: bool = False, **kwargs):
         """Меняет настройки API"""
@@ -54,4 +61,5 @@ class OpenMeteoAPI(WeatherAPI):
 
     def check(self, **kwargs):
         """Проверяет настройки API"""
-        pass
+        if self.id is None and self.city is None and self.coordinates is None:
+            raise ValueError("Please set at least one setting: id, city, or coordinates")
