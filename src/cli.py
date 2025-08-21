@@ -4,7 +4,7 @@ from loguru import logger
 from dataclasses import dataclass
 from setting import Setting
 from open_meteo.api import OpenMeteoAPI
-from errors import ApiError, SettingsError, EndpointError
+from errors import ApiError, EndpointError, ConfigError
 
 exist_apis = {
     "open-meteo": {
@@ -65,7 +65,7 @@ class DebugShell(cmd.Cmd):
             self.config = self.setting.fetch(self.current_config_class, [api_name])
             logger.info(f"Config loaded for {api_name}")
             print("Config loaded")
-        except Exception as e:
+        except ConfigError as e:
             logger.warning(f"Config not found for {api_name}: {e}")
             print("Config not found, created new")
             self.config = self.current_config_class()
@@ -97,7 +97,7 @@ class DebugShell(cmd.Cmd):
             self.current_config_class = config_class
             logger.info(f"Config loaded for {api_name}")
             print("Configuration loaded")
-        except Exception as e:
+        except ConfigError as e:
             logger.error(f"Error loading config: {e}")
             print(f"❌ Error: {e}")
             self.config = config_class()
@@ -199,7 +199,7 @@ class DebugShell(cmd.Cmd):
             self.setting.save(self.config, [self.current_api])
             logger.info(f"Config saved for {self.current_api}")
             print(f"Configuration saved for {self.current_api}")
-        except SettingsError as e:
+        except ConfigError as e:
             logger.error(f"Error saving config: {e}")
             print(f"❌ Error saving: {e}")
 

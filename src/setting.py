@@ -2,6 +2,7 @@ from collections.abc import Callable
 from typing import Union
 import toml
 import os
+from errors import ConfigError
 
 
 class Setting:
@@ -38,9 +39,9 @@ class Setting:
                     if value is not None:
                         obj_data[name] = value
                 else:
-                    raise AttributeError(f"Object doesn't have attribute '{name}'")
+                    raise ConfigError(f"Object doesn't have attribute '{name}'")
         else:
-            raise TypeError("Object's class doesn't have __annotations__")
+            raise ConfigError("Object's class doesn't have __annotations__")
 
         # Сохраняем данные по указанному пути
         if len(path) > 0:
@@ -83,7 +84,7 @@ class Setting:
             return obj()
 
         if "__annotations__" not in obj.__dict__:
-            raise TypeError("Class don't have __annotation__")
+            raise ConfigError("Class don't have __annotation__")
 
         kwargs = {}
         for name, annotation in obj.__annotations__.items():
@@ -92,7 +93,7 @@ class Setting:
 
         if hasattr(obj, "__init__") and obj.__init__ is not object.__init__:
             return obj(**kwargs)
-        raise TypeError(f"{obj.__name__} doesn't have a usable __init__")
+        raise ConfigError(f"{obj.__name__} doesn't have a usable __init__")
 
     def add(self, key, value):
         """Add a new key-value pair to settings and save."""
