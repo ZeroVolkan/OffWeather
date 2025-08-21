@@ -3,6 +3,8 @@ from loguru import logger
 
 import requests
 
+from errors import ResponseError, SettingsError
+
 
 class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
     def __init__(
@@ -38,6 +40,7 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
 
         if responce.status_code != 200:
             logger.error(f"Ошибка при получении данных: {responce.status_code}")
+            raise ResponseError(f"Ошибка при получении данных: {responce.status_code}")
 
         response_data = responce.json()
 
@@ -53,7 +56,7 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
         """Проверяет настройки Endpoint"""
         if self.id is None and self.city is None:
             logger.error("id or city not specified")
-            raise ValueError("id or city not specified")
+            raise SettingsError("id or city not specified")
 
     def select_id(self, id: int | None = None):
         self.id = id

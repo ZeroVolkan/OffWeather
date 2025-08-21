@@ -4,6 +4,7 @@ from loguru import logger
 from dataclasses import dataclass
 from setting import Setting
 from open_meteo.api import OpenMeteoAPI
+from errors import ApiError, SettingsError, EndpointError
 
 exist_apis = {
     "open-meteo": {
@@ -124,7 +125,7 @@ class DebugShell(cmd.Cmd):
 
             logger.info(f"API instance created for {self.current_api}")
             print("API created")
-        except Exception as e:
+        except ApiError as e:
             logger.error(f"Error creating API: {e}")
             print(f"❌ Error creating API: {e}")
 
@@ -138,7 +139,7 @@ class DebugShell(cmd.Cmd):
             self.api.refresh()
             logger.info("API data refreshed")
             print("Data refreshed")
-        except Exception as e:
+        except ApiError as e:
             logger.error(f"Error refreshing API: {e}")
             print(f"❌ Error refreshing API: {e}")
 
@@ -152,7 +153,7 @@ class DebugShell(cmd.Cmd):
             data = self.api.get_endpoint(endpoint or "GeoEndpoint").data
             logger.info(f"Data retrieved from {endpoint}")
             print(f"Data {endpoint}: {data}")
-        except Exception as e:
+        except EndpointError as e:
             logger.error(f"Error getting data from {endpoint}: {e}")
             print(f"❌ Error getting data from {endpoint}: {e}")
 
@@ -198,7 +199,7 @@ class DebugShell(cmd.Cmd):
             self.setting.save(self.config, [self.current_api])
             logger.info(f"Config saved for {self.current_api}")
             print(f"Configuration saved for {self.current_api}")
-        except Exception as e:
+        except SettingsError as e:
             logger.error(f"Error saving config: {e}")
             print(f"❌ Error saving: {e}")
 
@@ -283,7 +284,7 @@ def open_meteo(api_key, city, country, language, count):
             language=config.language or language,
             count=config.count or count,
         )
-    except Exception as e:
+    except ApiError as e:
         logger.error("Error creating API instance: {}", e)
         return
 

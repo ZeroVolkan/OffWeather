@@ -3,6 +3,8 @@ from loguru import logger
 
 import requests
 
+from errors import SettingsError, ResponseError
+
 
 class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
     def __init__(
@@ -64,9 +66,10 @@ class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
 
         else:
             logger.error(f"{self.__class__.__name__} Error API: {response.status_code}")
+            raise ResponseError(f"API error: {response.status_code}")
 
     def check(self, **kwargs):
         """Проверяет настройки Endpoint"""
         if self.latitude is None or self.longitude is None:
             logger.error("Сoordinates not specified")
-            raise ValueError("coordinates not specified")
+            raise SettingsError("coordinates not specified")

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import final, Any
-from pydantic import BaseModel
+from errors import EndpointError, ProcessorError
 from loguru import logger
 
 
@@ -15,14 +15,14 @@ class WeatherAPI(ABC):
     def add_endpoint(self, endpoint: WeatherEndpoint):
         """Добавляет endpoint"""
         if endpoint.name in self.endpoints:
-            raise ValueError(f"Endpoint with name '{endpoint.name}' already exists")
+            raise EndpointError(f"Endpoint with name '{endpoint.name}' already exists")
         self.endpoints[endpoint.name] = endpoint
 
     @final
     def delete_endpoint(self, endpoint: WeatherEndpoint):
         """Удаляет endpoint"""
         if endpoint.name not in self.endpoints:
-            raise ValueError(f"Endpoint with name '{endpoint.name}' does not exist")
+            raise EndpointError(f"Endpoint with name '{endpoint.name}' does not exist")
         del self.endpoints[endpoint.name]
 
     @final
@@ -30,20 +30,20 @@ class WeatherAPI(ABC):
         """Получает endpoint по имени"""
         if result := self.endpoints.get(name):
             return result
-        raise ValueError(f"Endpoint with name '{name}' does not exist")
+        raise EndpointError(f"Endpoint with name '{name}' does not exist")
 
     @final
     def add_processor(self, processor: WeatherProcessor):
         """Добавляет процессор"""
         if processor.name in self.processors:
-            raise ValueError(f"Processor with name '{processor.name}' already exists")
+            raise ProcessorError(f"Processor with name '{processor.name}' already exists")
         self.processors[processor.name] = processor
 
     @final
     def delete_processor(self, processor: WeatherProcessor):
         """Удаляет процессор"""
         if processor.name not in self.processors:
-            raise ValueError(f"Processor with name '{processor.name}' does not exist")
+            raise ProcessorError(f"Processor with name '{processor.name}' does not exist")
         del self.processors[processor.name]
 
     @final
@@ -51,7 +51,7 @@ class WeatherAPI(ABC):
         """Получает процессор по имени"""
         if result := self.processors.get(name):
             return result
-        raise ValueError(f"Processor with name '{name}' does not exist")
+        raise ProcessorError(f"Processor with name '{name}' does not exist")
 
     @final
     def refresh(self):
