@@ -36,14 +36,18 @@ class WeatherAPI(ABC):
     def add_processor(self, processor: WeatherProcessor):
         """Добавляет процессор"""
         if processor.name in self.processors:
-            raise ProcessorError(f"Processor with name '{processor.name}' already exists")
+            raise ProcessorError(
+                f"Processor with name '{processor.name}' already exists"
+            )
         self.processors[processor.name] = processor
 
     @final
     def delete_processor(self, processor: WeatherProcessor):
         """Удаляет процессор"""
         if processor.name not in self.processors:
-            raise ProcessorError(f"Processor with name '{processor.name}' does not exist")
+            raise ProcessorError(
+                f"Processor with name '{processor.name}' does not exist"
+            )
         del self.processors[processor.name]
 
     @final
