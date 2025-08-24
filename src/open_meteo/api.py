@@ -19,7 +19,8 @@ class OpenMeteoAPI(WeatherAPI):
         language: str | None = None,
         country: str | None = None,
         count: int | None = None,
-        coordinates: Coordinates | None = None
+        coordinates: Coordinates | None = None,
+        **kwargs
     ):
         super().__init__()
 

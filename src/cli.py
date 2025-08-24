@@ -52,6 +52,8 @@ class DebugShell(cmd.Cmd):
         Usage: api [select|list] <api_name>
         select <api_name> : Select an API
         list : List available APIs
+        up: Instance Api create
+        down: Instance Api delete
         """
         parts = args.split(maxsplit=2)
 
@@ -72,6 +74,24 @@ class DebugShell(cmd.Cmd):
                 print("Available APIs:")
                 for api_name, api_info in self.apis.items():
                     print(f"  {api_name} ({api_info['class']})")
+            case "up":
+                if self.config is None:
+                    print("No configuration loaded.")
+                    return
+                if self.selected is None:
+                    print("No API selected.")
+                    return
+                try:
+                    self.api = self.apis[self.selected]["class"](asdict(self.config))
+                except ApiError as e:
+                    print(f"Failed to create instance for API '{self.selected}': {e}")
+                logger.info(f"Created instance for API: {self.selected}")
+            case "down":
+                if self.selected is None:
+                    print("No API selected.")
+                    return
+                del self.api
+                logger.info(f"Deleted instance for API: {self.selected}")
             case _:
                 print("Invalid command.")
                 print(self.do_api.__doc__)
@@ -170,44 +190,6 @@ class DebugShell(cmd.Cmd):
                 print(self.do_api.__doc__)
                 return
 
-    def do_up(self, args):
-        """Create API instance: up [api_name]"""
-        if not self.config:
-            print("❌ First load configuration")
-            return
-        parts = args.split(maxsplit=1)
-        api_name = parts[0] if parts else None
-        if not api_name:
-            print("❌ Specify API name, e.g., 'up open-meteo'")
-            return
-        if api_name not in self.apis:
-            print(f"❌ Unknown API: {api_name}. Available: {', '.join(self.apis.keys())}")
-            return
-        try:
-            self.api = self.apis[api_name]["class"](asdict(self.config))
-            logger.info(f"API instance created for {api_name}")
-            print(f"API created for {api_name}")
-        except ApiError as e:
-            logger.error(f"Error creating API: {e}")
-            print(f"❌ Error creating API: {e}")
-
-    def do_down(self, args=""):
-        """Remove API instance."""
-        self.api = None
-        print("API instance removed")
-
-    def do_refresh(self, args=""):
-        """Refresh API data."""
-        if not self.api:
-            print("❌ First create API")
-            return
-        try:
-            self.api.refresh()
-            logger.info("API data refreshed")
-            print("Data refreshed")
-        except ApiError as e:
-            logger.error(f"Error refreshing API: {e}")
-            print(f"❌ Error refreshing API: {e}")
 
     def do_show(self, endpoint):
         """Show data from an endpoint: show GeoEndpoint"""
