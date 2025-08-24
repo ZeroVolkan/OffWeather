@@ -16,6 +16,7 @@ from .utils import unwrap_and_cast, unwrap_union_type
 class Config(ABC):
     pass
 
+
 @dataclass
 class OpenMeteoConfig(Config):
     id: int | None = None
@@ -24,6 +25,7 @@ class OpenMeteoConfig(Config):
     city: str | None = None
     language: str | None = None
     count: int | None = None
+
 
 class DebugShell(cmd.Cmd):
     prompt = "(debug) "
@@ -97,7 +99,6 @@ class DebugShell(cmd.Cmd):
                 print(self.do_api.__doc__)
                 return
 
-
     def do_config(self, args):
         """Manage configuration settings.
 
@@ -134,7 +135,9 @@ class DebugShell(cmd.Cmd):
                     return
                 try:
                     self.config = self.setting.save(SelectedConfig, path)
-                    logger.info(f"Configuration {SelectedConfig.__name__} saved to {path}")
+                    logger.info(
+                        f"Configuration {SelectedConfig.__name__} saved to {path}"
+                    )
                 except ConfigError as e:
                     print(f"❌ {e}")
             case "fetch":
@@ -143,7 +146,9 @@ class DebugShell(cmd.Cmd):
                     return
                 try:
                     self.config = self.setting.fetch(SelectedConfig, path)
-                    logger.info(f"Configuration {SelectedConfig.__name__} fetched from {path}")
+                    logger.info(
+                        f"Configuration {SelectedConfig.__name__} fetched from {path}"
+                    )
                 except ConfigError as e:
                     print(f"❌ {e}")
             case "set":
@@ -160,14 +165,22 @@ class DebugShell(cmd.Cmd):
                 annotation = cast(UnionType, self.config.__annotations__.get(param))
 
                 try:
-                    setattr(self.config, param, unwrap_and_cast(unwrap_union_type(annotation), value))
+                    setattr(
+                        self.config,
+                        param,
+                        unwrap_and_cast(unwrap_union_type(annotation), value),
+                    )
                 except (ValueError, TypeError) as e:
                     print(f"❌ {e}")
 
                 if not value:
-                    logger.info(f"Configuration {SelectedConfig.__name__} clear {param}")
+                    logger.info(
+                        f"Configuration {SelectedConfig.__name__} clear {param}"
+                    )
                 else:
-                    logger.info(f"Configuration {SelectedConfig.__name__} set {param} to {value}")
+                    logger.info(
+                        f"Configuration {SelectedConfig.__name__} set {param} to {value}"
+                    )
             case "create":
                 if self.config:
                     print("❌ Configuration already exists")
@@ -190,7 +203,6 @@ class DebugShell(cmd.Cmd):
                 print(self.do_api.__doc__)
                 return
 
-
     def do_show(self, endpoint):
         """Show data from an endpoint: show GeoEndpoint"""
         if not self.api:
@@ -207,7 +219,18 @@ class DebugShell(cmd.Cmd):
     def do_status(self, args):
         """Show detailed status of the shell."""
         print("Status: ")
-        api_name = next((name for name, info in self.apis.items() if info["config"] == type(self.config)), None) if self.config else None
+        api_name = (
+            next(
+                (
+                    name
+                    for name, info in self.apis.items()
+                    if info["config"] == type(self.config)
+                ),
+                None,
+            )
+            if self.config
+            else None
+        )
         print(f"  Current API: {api_name or 'not selected'}")
         if api_name and api_name in self.apis:
             api_info = self.apis[api_name]
@@ -224,7 +247,9 @@ class DebugShell(cmd.Cmd):
         print(f"  API instance: {'created' if self.api else 'not created'}")
         if self.api:
             print(f"    API Type: {self.api.__class__.__name__}")
-            print(f"    Endpoints: {list(self.api.endpoints.keys()) if hasattr(self.api, 'endpoints') else 'n/a'}")
+            print(
+                f"    Endpoints: {list(self.api.endpoints.keys()) if hasattr(self.api, 'endpoints') else 'n/a'}"
+            )
         print(f"  Available APIs: {len(self.apis)} ({', '.join(self.apis.keys())})")
 
     def do_exit(self, args):
@@ -247,6 +272,7 @@ class DebugShell(cmd.Cmd):
             print(f"Available endpoints: {list(self.api.endpoints.keys())}")
         else:
             print("No API instance created")
+
 
 if __name__ == "__main__":
     DebugShell().cmdloop()

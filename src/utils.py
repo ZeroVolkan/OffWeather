@@ -2,10 +2,10 @@ from typing import Union, get_args, get_origin, Callable
 from types import NoneType, UnionType
 from typing_extensions import Any
 
+
 def unwrap_union_type[T: type](union_type: T | UnionType) -> T:
     """Extract non-None type from Union[T, None] or T | None. Returns the actual type T."""
     origin = get_origin(union_type)
-
 
     if origin is Union:
         args = get_args(union_type)

@@ -5,6 +5,7 @@ from loguru import logger
 
 from .errors import EndpointError, ProcessorError
 
+
 class WeatherAPI(ABC):
     @abstractmethod
     def __init__(self, **kwargs):
