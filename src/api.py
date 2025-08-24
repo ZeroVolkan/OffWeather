@@ -1,9 +1,9 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import final, Any
-from errors import EndpointError, ProcessorError
 from loguru import logger
 
+from .errors import EndpointError, ProcessorError
 
 class WeatherAPI(ABC):
     @abstractmethod

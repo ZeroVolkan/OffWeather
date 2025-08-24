@@ -2,10 +2,15 @@ import cmd
 from dataclasses import dataclass, asdict
 from abc import ABC
 from loguru import logger
-from api import WeatherAPI
-from setting import Setting
-from open_meteo.api import OpenMeteoAPI
-from errors import ApiError, EndpointError, ConfigError
+from typing import cast
+from types import UnionType
+
+from .api import WeatherAPI
+from .setting import Setting
+from .open_meteo.api import OpenMeteoAPI
+from .errors import ApiError, EndpointError, ConfigError
+from .utils import unwrap_and_cast, unwrap_union_type
+
 
 @dataclass
 class Config(ABC):
@@ -34,133 +39,136 @@ class DebugShell(cmd.Cmd):
 
     def __init__(self):
         super().__init__()
-        self.setting: Setting = Setting("setting.toml")
-        self.config: Config | None = None
         self.api: WeatherAPI | None = None
+        self.config: Config | None = None
+        self.selected: str | None = None
+        self.setting: Setting = Setting("setting.toml")
         logger.add(".log/debug.log")
         logger.info("Debug shell started")
 
-    def do_list(self, args=""):
-        """List available APIs."""
-        print("Available APIs:")
-        for api_name, api_info in self.apis.items():
-            print(f"  {api_name} ({api_info['class']})")
+    def do_api(self, args):
+        """Manage api
+
+        Usage: api [select|list] <api_name>
+        select <api_name> : Select an API
+        list : List available APIs
+        """
+        parts = args.split(maxsplit=2)
+
+        command = parts[0] if parts else ""
+        api_name = parts[1] if len(parts) > 1 else None
+
+        match command:
+            case "select":
+                if api_name is None:
+                    print("Please provide an API name.")
+                    return
+                if api_name not in self.apis:
+                    print(f"API '{api_name}' not found.")
+                    return
+                self.selected = api_name
+                logger.info(f"Selected API: {api_name}")
+            case "list":
+                print("Available APIs:")
+                for api_name, api_info in self.apis.items():
+                    print(f"  {api_name} ({api_info['class']})")
+            case _:
+                print("Invalid command.")
+                print(self.do_api.__doc__)
+                return
+
 
     def do_config(self, args):
         """Manage configuration settings.
 
-        Usage: config [save|load|show|set|reset] [api_name] [path|param value]
-        - save [api_name] [path] : Save configuration to TOML file
-        - load [api_name] [path] : Load configuration from TOML file
+        Usage: config [save|load|show|set|reset] [path|param value]
+        - save [path] : Save configuration to TOML file
+        - fetch [path] : Fetch configuration from TOML file
+        - set [param] <value> : Set a configuration parameter
+        - create : Create a new configuration file
         - show : Show current configuration
-        - set [api_name] [param] <value> : Set a configuration parameter
-        - reset : Clear configuration
+        - clear : Clear configuration
         """
-        parts = args.split(maxsplit=3)
-        command = parts[0] if parts else ""
-        api_name = parts[1] if len(parts) > 1 else None
-        extra = parts[2:] if len(parts) > 2 else []
-        params = parts[1:] if len(parts) > 1 else []
-
-        if not command:
-            print("❌ Usage: config [save|load|show|set|reset] [api_name] [path|param value]")
-            print("  save [api_name] <path> - Save configuration")
-            print("  load [api_name] <path> - Load configuration")
-            print("  show - Display current configuration")
-            print("  set [api_name] [param] <value> - Set configuration parameter")
-            print("  reset - Clear configuration")
+        if not self.selected:
+            print("❌ No API selected, please select an API first, use command api")
             return
 
-        if command not in ["load", "reset", "show"] and not self.config:
-            print("❌ First load or create configuration")
+        SelectedConfig = self.apis[self.selected]["config"]
+
+        parts = args.split()
+        command = parts[0] if parts else None
+
+        path = parts[1:] if len(parts) > 1 else None
+
+        param = parts[1] if len(parts) > 1 else None
+        value = parts[2] if len(parts) > 2 else None
+
+        if not command:
+            print(self.do_config.__doc__)
             return
 
         match command:
             case "save":
-                if not self.config:
-                    print("❌ No configuration to save")
-                    return
-                if not api_name:
-                    print("❌ Specify API name, e.g., 'setting save open-meteo'")
-                    return
-                if api_name not in self.apis:
-                    print(f"❌ Unknown API: {api_name}. Available: {', '.join(self.apis.keys())}")
+                if not path:
+                    print("❌ Please provide a path to save the configuration")
                     return
                 try:
-                    path = extra[0].split("/") if extra else [api_name]
-                    self.setting.save(self.config, [api_name] + path)
-                    logger.info(f"Configuration saved for {api_name} at path {path or 'default'}")
-                    print(f"Configuration saved for {api_name}")
+                    self.config = self.setting.save(SelectedConfig, path)
+                    logger.info(f"Configuration {SelectedConfig.__name__} saved to {path}")
                 except ConfigError as e:
-                    logger.error(f"Error saving config: {e}")
-                    print(f"❌ Error saving: {e}")
-
-            case "load":
-                if self.api:
-                    print("❌ API instance exists, delete it first with 'down'")
+                    print(f"❌ {e}")
+            case "fetch":
+                if not path:
+                    print("❌ Please provide a path to fetch the configuration")
                     return
-                if not api_name:
-                    print("❌ Specify API name, e.g., 'config load open-meteo'")
-                    return
-                if api_name not in self.apis:
-                    print(f"❌ Unknown API: {api_name}. Available: {', '.join(self.apis.keys())}")
-                    return
-
-                config_class = self.apis[api_name]["config"]
                 try:
-                    path = extra[0].split("/") if extra else [api_name]
-                    self.config = self.setting.fetch(config_class, path)
-                    logger.info(f"Configuration loaded for {api_name} at path {path or 'default'}")
-                    print(f"Configuration loaded for {api_name}")
+                    self.config = self.setting.fetch(SelectedConfig, path)
+                    logger.info(f"Configuration {SelectedConfig.__name__} fetched from {path}")
                 except ConfigError as e:
-                    logger.error(f"Error loading config: {e}")
-                    print(f"❌ Error: {e}, creating new config")
-                    self.config = config_class()
-
-            case "show":
-                if not self.config:
-                    print("❌ No configuration loaded")
-                    return
-                api_name = next((name for name, info in self.apis.items() if info["config"] == type(self.config)), "unknown")
-                print(f"Configuration for {api_name}:")
-                for field_name in self.config.__annotations__.keys():
-                    field_value = getattr(self.config, field_name, "not found")
-                    print(f"  {field_name}: {field_value or 'not set'}")
-                logger.info(f"Displayed configuration for {api_name}")
-
+                    print(f"❌ {e}")
             case "set":
+                if not param:
+                    print("❌ Please provide a parameter")
+                    return
+                if not self.config:
+                    print("X Please load or create a configuration")
+                    return
+                if not hasattr(self.config, param):
+                    print(f"X Parameter {param} does not exist")
+                    return
+
+                annotation = cast(UnionType, self.config.__annotations__.get(param))
+
+                try:
+                    setattr(self.config, param, unwrap_and_cast(unwrap_union_type(annotation), value))
+                except (ValueError, TypeError) as e:
+                    print(f"❌ {e}")
+
+                if not value:
+                    logger.info(f"Configuration {SelectedConfig.__name__} clear {param}")
+                else:
+                    logger.info(f"Configuration {SelectedConfig.__name__} set {param} to {value}")
+            case "create":
+                if self.config:
+                    print("❌ Configuration already exists")
+                    return
+                self.config = SelectedConfig()
+                logger.info(f"Configuration {SelectedConfig.__name__} created")
+            case "show":
                 if not self.config:
                     print("❌ First load configuration")
                     return
-                if len(params) < 2:
-                    print("❌ Usage: setting set [param] [value]")
-                    return
-
-                param, value = params if len(params) == 2 else (params[0], None)
-
-                if hasattr(self.config, param):
-                    try:
-                        annotation = self.config.__annotations__.get(param)
-                        value = self.setting._cast_value(value, annotation)
-                        setattr(self.config, param, value)
-                        logger.info(f"Config parameter {param} set to {value}")
-                        print(f"{param} = {value}")
-                    except (ValueError, ConfigError) as e:
-                        logger.error(f"Error setting {param}: {e}")
-                        print(f"❌ Error setting {param}: {e}")
-                else:
-                    print(f"❌ Unknown parameter: {param}")
-
-            case "reset":
-                if self.api:
-                    print("❌ API instance exists, delete it first with 'down'")
+                print(self.config)
+            case "clear":
+                if not self.config:
+                    print("❌ Configuration isn't loaded")
                     return
                 self.config = None
-                logger.info("Configuration reset")
-                print("Configuration reset")
-
+                logger.info(f"Configuration {SelectedConfig.__name__} cleared")
             case _:
-                print("❌ Invalid command. Use: save, load, show, set, reset")
+                print("Invalid command.")
+                print(self.do_api.__doc__)
+                return
 
     def do_up(self, args):
         """Create API instance: up [api_name]"""

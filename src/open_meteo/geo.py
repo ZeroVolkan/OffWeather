@@ -1,9 +1,8 @@
-from api import WeatherEndpoint
 from loguru import logger
-
 import requests
 
-from errors import ResponseError, SettingsError
+from src.api import WeatherEndpoint
+from src.errors import ResponseError, SettingsError
 
 
 class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):

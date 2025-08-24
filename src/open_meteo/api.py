@@ -4,9 +4,9 @@ from retry_requests import retry
 
 from loguru import logger
 
-from api import WeatherAPI
-from errors import SettingsError, UnknownApiError
-from models import Coordinates
+from src.api import WeatherAPI
+from src.errors import SettingsError, UnknownApiError
+from src.models import Coordinates
 from .forecast import ForecastEndpoint
 from .geo import GeoEndpoint
 

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
-from models import Coordinates
+
+from src.models import Coordinates
 
 
 # ----- Enum кодов погоды -----

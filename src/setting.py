@@ -1,8 +1,8 @@
-from collections.abc import Callable
-from typing import Union
+from typing import Union, Callable
 import toml
 import os
-from errors import ConfigError
+
+from .errors import ConfigError
 
 
 class Setting:
