@@ -1,10 +1,10 @@
 import requests
 from requests_cache import CachedSession
 from retry_requests import retry
-
+from dataclasses import dataclass
 from loguru import logger
 
-from src.api import WeatherAPI
+from src.api import WeatherAPI, Config
 from src.errors import SettingsError, UnknownApiError
 from src.models import Coordinates
 from .forecast import ForecastEndpoint
@@ -67,3 +67,13 @@ class OpenMeteoAPI(WeatherAPI):
             raise SettingsError(
                 "Please set at least one setting: id, city, or coordinates"
             )
+
+
+@dataclass
+class OpenMeteoConfig(Config):
+    id: int | None = None
+    api_key: str | None = None
+    country: str | None = None
+    city: str | None = None
+    language: str | None = None
+    count: int | None = None

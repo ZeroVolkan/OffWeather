@@ -1,6 +1,12 @@
-from src.utils import unwrap_and_cast, safe_cast, safe_unwrap_union_type, unwrap_union_type
+from src.utils import (
+    unwrap_and_cast,
+    safe_cast,
+    safe_unwrap_union_type,
+    unwrap_union_type,
+)
 from typing import Union
 import pytest
+
 
 class TestUnwrapAndCast:
     """Test cases for unwrap_and_cast function"""
@@ -34,6 +40,7 @@ class TestUnwrapAndCast:
 
     def test_callable_handling(self):
         """Test handling of callable values"""
+
         def sample_func():
             return "test"
 
@@ -54,6 +61,7 @@ class TestUnwrapAndCast:
 
     def test_truly_non_callable_values(self):
         """Test that truly non-callable values raise ValueError with 'Cannot cast' message"""
+
         # Create an object that's definitely not callable
         class NonCallableType:
             pass
@@ -129,6 +137,7 @@ class TestSafeCast:
         result = safe_cast(int, None, 99)
         assert result == 99
 
+
 class TestUnwrapUnionType:
     """Test cases for unwrap_union_type function"""
 
@@ -171,10 +180,14 @@ class TestUnwrapUnionType:
 
     def test_union_with_multiple_non_none_types_raises_error(self):
         """Test that Union with multiple non-None types raises ValueError"""
-        with pytest.raises(ValueError, match="Union type must contain only one non-None type"):
+        with pytest.raises(
+            ValueError, match="Union type must contain only one non-None type"
+        ):
             unwrap_union_type(Union[str, int])
 
-        with pytest.raises(ValueError, match="Union type must contain only one non-None type"):
+        with pytest.raises(
+            ValueError, match="Union type must contain only one non-None type"
+        ):
             unwrap_union_type(Union[str, int, float])
 
     def test_complex_types(self):
@@ -190,6 +203,7 @@ class TestUnwrapUnionType:
 
     def test_custom_class_types(self):
         """Test with custom class types"""
+
         class CustomClass:
             pass
 
@@ -233,7 +247,6 @@ class TestSafeUnwrapUnionType:
         result = safe_unwrap_union_type(Union[str, int, None], bool)
         assert result is bool
 
-
     def test_default_type_variations(self):
         """Test with different default types"""
         # String default
@@ -260,7 +273,6 @@ class TestSafeUnwrapUnionType:
         # Invalid union should use default
         result = safe_unwrap_union_type(Union[str, int, float], tuple)
         assert result is tuple
-
 
 
 if __name__ == "__main__":

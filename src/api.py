@@ -1,5 +1,6 @@
 from __future__ import annotations
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import final, Any
 from loguru import logger
 
@@ -141,3 +142,8 @@ class WeatherProcessor[T: WeatherAPI](ABC):
     @associations.deleter
     def associations(self, processor: WeatherProcessor):
         del self._associations[processor.name]
+
+
+@dataclass
+class Config(ABC):
+    pass

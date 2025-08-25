@@ -1,43 +1,20 @@
 import cmd
-from dataclasses import dataclass, asdict
-from abc import ABC
+from dataclasses import asdict
 from loguru import logger
 from typing import cast
 from types import UnionType
 
-from .api import WeatherAPI
+from .api import WeatherAPI, Config
 from .setting import Setting
-from .open_meteo.api import OpenMeteoAPI
 from .errors import ApiError, EndpointError, ConfigError
 from .utils import unwrap_and_cast, unwrap_union_type
-
-
-@dataclass
-class Config(ABC):
-    pass
-
-
-@dataclass
-class OpenMeteoConfig(Config):
-    id: int | None = None
-    api_key: str | None = None
-    country: str | None = None
-    city: str | None = None
-    language: str | None = None
-    count: int | None = None
+from .information import Information
 
 
 class DebugShell(cmd.Cmd):
     prompt = "(debug) "
     intro = "Debug Shell for managing weather APIs"
-
-    apis = {
-        "open-meteo": {
-            "class": OpenMeteoAPI,
-            "config": OpenMeteoConfig,
-        },
-        # You can add other APIs here
-    }
+    information = Information()
 
     def __init__(self):
         super().__init__()
@@ -67,14 +44,14 @@ class DebugShell(cmd.Cmd):
                 if api_name is None:
                     print("Please provide an API name.")
                     return
-                if api_name not in self.apis:
+                if api_name not in self.information.available.keys():
                     print(f"API '{api_name}' not found.")
                     return
                 self.selected = api_name
                 logger.info(f"Selected API: {api_name}")
             case "list":
                 print("Available APIs:")
-                for api_name, api_info in self.apis.items():
+                for api_name, api_info in self.information.available.items():
                     print(f"  {api_name} ({api_info['class']})")
             case "up":
                 if self.config is None:
@@ -84,10 +61,14 @@ class DebugShell(cmd.Cmd):
                     print("No API selected.")
                     return
                 try:
-                    self.api = self.apis[self.selected]["class"](asdict(self.config))
+                    self.api = self.information.get(self.selected)["class"](
+                        asdict(self.config)
+                    )
+                    logger.info(f"Created instance for API: {self.selected}")
                 except ApiError as e:
                     print(f"Failed to create instance for API '{self.selected}': {e}")
-                logger.info(f"Created instance for API: {self.selected}")
+                except AttributeError as e:
+                    print(f"Failed to find API'{self.selected}': {e}")
             case "down":
                 if self.selected is None:
                     print("No API selected.")
@@ -114,7 +95,7 @@ class DebugShell(cmd.Cmd):
             print("❌ No API selected, please select an API first, use command api")
             return
 
-        SelectedConfig = self.apis[self.selected]["config"]
+        SelectedConfig = self.information.get(self.selected)["config"]
 
         parts = args.split()
         command = parts[0] if parts else None
@@ -217,40 +198,8 @@ class DebugShell(cmd.Cmd):
             print(f"❌ Error getting data from {endpoint}: {e}")
 
     def do_status(self, args):
-        """Show detailed status of the shell."""
-        print("Status: ")
-        api_name = (
-            next(
-                (
-                    name
-                    for name, info in self.apis.items()
-                    if info["config"] == type(self.config)
-                ),
-                None,
-            )
-            if self.config
-            else None
-        )
-        print(f"  Current API: {api_name or 'not selected'}")
-        if api_name and api_name in self.apis:
-            api_info = self.apis[api_name]
-            print(f"    API Class: {api_info['class']}")
-            print(f"    Config: {api_info['config']}")
-        print(f"  Configuration: {'loaded' if self.config else 'not loaded'}")
-        if self.config:
-            print(f"    Config Type: {type(self.config).__name__}")
-            for field_name in self.config.__annotations__.keys():
-                field_value = getattr(self.config, field_name, "not found")
-                if field_name == "api_key" and field_value:
-                    field_value = "***hidden***"
-                print(f"    {field_name}: {field_value or 'not set'}")
-        print(f"  API instance: {'created' if self.api else 'not created'}")
-        if self.api:
-            print(f"    API Type: {self.api.__class__.__name__}")
-            print(
-                f"    Endpoints: {list(self.api.endpoints.keys()) if hasattr(self.api, 'endpoints') else 'n/a'}"
-            )
-        print(f"  Available APIs: {len(self.apis)} ({', '.join(self.apis.keys())})")
+        """Show status cli"""
+        pass
 
     def do_exit(self, args):
         """Exit the debug shell."""
