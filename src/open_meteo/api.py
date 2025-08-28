@@ -54,12 +54,6 @@ class OpenMeteoAPI(WeatherAPI):
             logger.error(f"Unknown API error: {e}")
             raise UnknownApiError("Unknown API error")
 
-    def setting(self, resetup: bool = False, **kwargs):
-        """Меняет настройки API"""
-        for key, value in kwargs.items():
-            self.__dict__[key] = value
-        if resetup:
-            self.__init__(**self.__dict__)
 
     def check(self, **kwargs):
         """Проверяет настройки API"""

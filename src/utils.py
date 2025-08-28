@@ -3,7 +3,7 @@ from types import NoneType, UnionType
 from typing_extensions import Any
 
 
-def unwrap_union_type[T: type](union_type: T | UnionType) -> T:
+def unwrap_union_type[T](union_type: type[T] | UnionType) -> T:
     """Extract non-None type from Union[T, None] or T | None. Returns the actual type T."""
     origin = get_origin(union_type)
 
@@ -33,7 +33,7 @@ def safe_unwrap_union_type(union_type: type | UnionType, default_type: type) -> 
         return default_type
 
 
-def unwrap_and_cast[T: type](target_type: T, value) -> T:
+def unwrap_and_cast[T](target_type: type[T], value) -> T:
     """Cast value to target_type. Supports Union[T, None] types. Raises ValueError if value is None."""
     if value is None:
         raise ValueError("Cannot unwrap None value")
@@ -50,11 +50,11 @@ def unwrap_and_cast[T: type](target_type: T, value) -> T:
             raise ValueError(f"Cannot cast {value} to {target_type}")
 
     if isinstance(origin, Callable):
-        return target_type(value)
+        return target_type(value)  # pyright: ignore[reportCallIssue]
     raise ValueError(f"Cannot cast {value} to {target_type}")
 
 
-def safe_cast[T: type](target_type: T, value: Any, default: Any = None) -> T | None:
+def safe_cast[T](target_type: type[T], value: Any, default: Any = None) -> T | None:
     """Safely cast value to target_type, returns default if value is None."""
     if value is None:
         return default

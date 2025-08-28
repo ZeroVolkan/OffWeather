@@ -8,13 +8,13 @@ from .api import WeatherAPI, Config
 from .setting import Setting
 from .errors import ApiError, EndpointError, ConfigError
 from .utils import unwrap_and_cast, unwrap_union_type
-from .information import Information
+from .information import apis
 
 
 class DebugShell(cmd.Cmd):
     prompt = "(debug) "
     intro = "Debug Shell for managing weather APIs"
-    information = Information()
+    apis = apis()
 
     def __init__(self):
         super().__init__()
@@ -44,14 +44,14 @@ class DebugShell(cmd.Cmd):
                 if api_name is None:
                     print("Please provide an API name.")
                     return
-                if api_name not in self.information.available.keys():
+                if api_name not in self.apis.keys():
                     print(f"API '{api_name}' not found.")
                     return
                 self.selected = api_name
                 logger.info(f"Selected API: {api_name}")
             case "list":
                 print("Available APIs:")
-                for api_name, api_info in self.information.available.items():
+                for api_name, api_info in self.apis.items():
                     print(f"  {api_name} ({api_info['class']})")
             case "up":
                 if self.config is None:
@@ -61,7 +61,7 @@ class DebugShell(cmd.Cmd):
                     print("No API selected.")
                     return
                 try:
-                    self.api = self.information.get(self.selected)["class"](
+                    self.api = self.apis[self.selected]["class"](
                         asdict(self.config)
                     )
                     logger.info(f"Created instance for API: {self.selected}")
@@ -73,7 +73,8 @@ class DebugShell(cmd.Cmd):
                 if self.selected is None:
                     print("No API selected.")
                     return
-                del self.api
+                if self.api:
+                    del self.api
                 logger.info(f"Deleted instance for API: {self.selected}")
             case _:
                 print("Invalid command.")
@@ -95,7 +96,18 @@ class DebugShell(cmd.Cmd):
             print("❌ No API selected, please select an API first, use command api")
             return
 
-        SelectedConfig = self.information.get(self.selected)["config"]
+        api = self.apis.get(self.selected)
+
+        if not api:
+            print(f"❌ API '{self.selected}' not found")
+            return
+
+        SelectedConfig = api["config"]
+
+        if not SelectedConfig:
+            print(f"❌ Configuration not found for API '{self.selected}'")
+            return
+
 
         parts = args.split()
         command = parts[0] if parts else None

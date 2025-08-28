@@ -15,28 +15,28 @@ class WeatherAPI(ABC):
 
     @final
     def add_endpoint(self, endpoint: WeatherEndpoint):
-        """Добавляет endpoint"""
+        """Add endpoint"""
         if endpoint.name in self.endpoints:
             raise EndpointError(f"Endpoint with name '{endpoint.name}' already exists")
         self.endpoints[endpoint.name] = endpoint
 
     @final
     def delete_endpoint(self, endpoint: WeatherEndpoint):
-        """Удаляет endpoint"""
+        """Remove endpoint"""
         if endpoint.name not in self.endpoints:
             raise EndpointError(f"Endpoint with name '{endpoint.name}' does not exist")
         del self.endpoints[endpoint.name]
 
     @final
     def get_endpoint(self, name: str) -> WeatherEndpoint:
-        """Получает endpoint по имени"""
+        """Get endpoint by name"""
         if result := self.endpoints.get(name):
             return result
         raise EndpointError(f"Endpoint with name '{name}' does not exist")
 
     @final
     def add_processor(self, processor: WeatherProcessor):
-        """Добавляет процессор"""
+        """Add processor"""
         if processor.name in self.processors:
             raise ProcessorError(
                 f"Processor with name '{processor.name}' already exists"
@@ -45,7 +45,7 @@ class WeatherAPI(ABC):
 
     @final
     def delete_processor(self, processor: WeatherProcessor):
-        """Удаляет процессор"""
+        """Remove processor"""
         if processor.name not in self.processors:
             raise ProcessorError(
                 f"Processor with name '{processor.name}' does not exist"
@@ -54,40 +54,40 @@ class WeatherAPI(ABC):
 
     @final
     def get_processor(self, name: str) -> WeatherProcessor:
-        """Получает процессор по имени"""
+        """Get processor by name"""
         if result := self.processors.get(name):
             return result
         raise ProcessorError(f"Processor with name '{name}' does not exist")
 
     @final
     def refresh(self):
-        """Обновляет данные у всех endpoints"""
+        """Refresh data for all endpoints"""
         logger.info(f"Refreshing endpoints {self.__class__.__name__}")
         for endpoint in self.endpoints.values():
             endpoint.refresh()
 
     @final
     def process(self):
-        """Обрабатывают данныe из endpoints и передают в единую модель данных"""
+        """Process data from endpoints and pass to unified data model"""
         logger.info(f"Processing data from endpoints {self.__class__.__name__}")
         for processor in self.processors.values():
             processor.run()
 
     @final
     def save(self):
-        """Сохраняет данные в базу данных"""
+        """Save data to database"""
         logger.info(f"Saving data from processors {self.__class__.__name__}")
         for processor in self.processors.values():
             processor.save()
 
     @abstractmethod
     def setting(self, resetup: bool = False, **kwargs):
-        """Меняет настройки API"""
+        """Change API settings"""
         pass
 
     @abstractmethod
     def check(self):
-        """Проверяет настройки API"""
+        """Check API settings"""
         pass
 
     @abstractmethod
@@ -106,7 +106,7 @@ class WeatherEndpoint[T: WeatherAPI](ABC):
 
     @abstractmethod
     def refresh(self):
-        """Обновляет данные у переменных данных, которые хранят данные погоды"""
+        """Update data for variables that store weather data"""
         pass
 
     @abstractmethod
@@ -123,12 +123,12 @@ class WeatherProcessor[T: WeatherAPI](ABC):
 
     @abstractmethod
     def run(self):
-        """Обрабатывает данные из endpoints и передает в буфер для последующей обработки"""
+        """Process data from endpoints and pass to buffer for further processing"""
         pass
 
     @abstractmethod
     def save(self):
-        """Сохраняет данные в базу данных"""
+        """Save data to database"""
         pass
 
     @property

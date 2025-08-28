@@ -64,11 +64,11 @@ class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
             self.data = {"current": current, "daily": daily}
 
         else:
-            logger.error(f"{self.__class__.__name__} Error API: {response.status_code}")
-            raise ResponseError(f"API error: {response.status_code}")
+            logger.error(f"{self.__class__.__name__} Error network request failed: {response.status_code}")
+            raise ResponseError(f"Network request failed: {response.status_code}")
 
     def check(self, **kwargs):
-        """Проверяет настройки Endpoint"""
+        """Check settings of Endpoint"""
         if self.latitude is None or self.longitude is None:
-            logger.error("Сoordinates not specified")
-            raise SettingsError("coordinates not specified")
+            logger.error("Coordinates not specified")
+            raise SettingsError("Coordinates not specified")

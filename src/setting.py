@@ -22,20 +22,20 @@ class Setting:
 
     def save(self, obj, path: list[str]):
         """Save object data to a TOML path by extracting values from object's annotations."""
-        # Создаем структуру по пути, если она не существует
+        # Create structure by path if it doesn't exist
         current = self.data
         for key in path[:-1]:
             if key not in current:
                 current[key] = {}
             current = current[key]
 
-        # Получаем данные из объекта
+        # Get object data
         obj_data = {}
         if hasattr(obj.__class__, "__annotations__"):
             for name, t in obj.__class__.__annotations__.items():
                 if hasattr(obj, name):
                     value = getattr(obj, name)
-                    # Сохраняем только не-None значения
+                    # Save only non-None values
                     if value is not None:
                         obj_data[name] = value
                 else:
@@ -43,32 +43,31 @@ class Setting:
         else:
             raise ConfigError("Object's class doesn't have __annotations__")
 
-        # Сохраняем данные по указанному пути
+        # Save data on path
         if len(path) > 0:
             current[path[-1]] = obj_data
         else:
             self.data.update(obj_data)
 
-        # Записываем в файл
+        # Write to file
         with open(self.file_path, "w") as file:
             toml.dump(self.data, file)
 
     def _cast_value(self, value, annotation):
-        """Привести значение к типу аннотации (учитывая Union и None)."""
+        """Cast value to type annotation (considering Union and None)."""
         if value is None:
             return None
 
-        # Обработка Union и types.UnionType
+        # Union and types.UnionType
         if hasattr(annotation, "__origin__") and annotation.__origin__ is Union:
             return self._cast_union(value, annotation.__args__)
         if hasattr(annotation, "__args__"):  # Python 3.10+
             return self._cast_union(value, annotation.__args__)
 
-        # Обычный тип
         return annotation(value)
 
     def _cast_union(self, value, args):
-        """Найти первый не-None тип из Union и привести значение."""
+        """Finds the first non-None type from Union and casts the value."""
         for arg in args:
             if arg is not type(None):
                 return arg(value)
@@ -83,7 +82,7 @@ class Setting:
         except KeyError:
             return obj()
 
-        if "__annotations__" not in obj.__dict__:
+        if hasattr(obj, "__dict__"):
             raise ConfigError("Class don't have __annotation__")
 
         kwargs = {}

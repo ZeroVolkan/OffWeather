@@ -35,13 +35,13 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
             "count": self.count,
         }
 
-        responce = session.get(self.url, params=params)
+        response = session.get(self.url, params=params)
 
-        if responce.status_code != 200:
-            logger.error(f"Ошибка при получении данных: {responce.status_code}")
-            raise ResponseError(f"Ошибка при получении данных: {responce.status_code}")
+        if response.status_code != 200:
+            logger.error(f"Error network request failed: {response.status_code}")
+            raise ResponseError(f"Error network request failed: {response.status_code}")
 
-        response_data = responce.json()
+        response_data = response.json()
 
         if self.id is None:
             self.data = response_data["results"]
@@ -52,7 +52,7 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
                     break
 
     def check(self):
-        """Проверяет настройки Endpoint"""
+        """Check settings of Endpoint"""
         if self.id is None and self.city is None:
             logger.error("id or city not specified")
             raise SettingsError("id or city not specified")

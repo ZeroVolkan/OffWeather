@@ -18,7 +18,7 @@ class ExtendedWeather(BaseModel, ABC):
     pass
 
 
-# ----- Варианты ответов -----
+# ----- Various responses -----
 class LocationOption(BaseModel):
     id: int
     city: str
@@ -36,5 +36,5 @@ class FullDataResponse(BaseModel):
     extended_weather: ExtendedWeather
 
 
-# ----- Универсальный ответ -----
+# ----- Universal response -----
 OpenMeteoResponse = Union[ClarificationResponse, FullDataResponse]
