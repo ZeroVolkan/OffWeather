@@ -2,7 +2,7 @@ from loguru import logger
 import requests
 
 from src.api import WeatherEndpoint
-from src.errors import ResponseError, SettingsError
+from src.errors import ResponseError, SettingError
 
 
 class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
@@ -55,7 +55,7 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
         """Check settings of Endpoint"""
         if self.id is None and self.city is None:
             logger.error("id or city not specified")
-            raise SettingsError("id or city not specified")
+            raise SettingError("id or city not specified")
 
     def select_id(self, id: int | None = None):
         self.id = id

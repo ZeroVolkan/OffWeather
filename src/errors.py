@@ -1,32 +1,37 @@
-class ApiError(Exception):
+class GeneralError(Exception):
     pass
 
 
-class UnknownApiError(ApiError):
+# General Errors for api
+class ApiError(GeneralError):
     pass
 
 
-class SettingsError(ApiError):
+# Error for class ConfigAPI from api.py
+class ConfigError(ApiError):
     pass
 
 
-class ConfigError(SettingsError):
-    pass
-
-
+# Endpoint Error
 class EndpointError(ApiError):
     pass
 
 
-class ProcessorError(ApiError):
+# General Errors for Service
+class ServiceError(GeneralError):
     pass
 
 
-class DataBaseError(ApiError):
+class ProcessorError(ServiceError):
     pass
 
 
-class ConnectionError(ApiError):
+class DataBaseError(ServiceError):
+    pass
+
+
+# Connection Errors
+class ConnectionError(GeneralError):
     pass
 
 
@@ -35,4 +40,10 @@ class ResponseError(ConnectionError):
 
 
 class RequestError(ConnectionError):
+    pass
+
+
+# Other Errors
+# Error for file setting.py
+class SettingError(Exception):
     pass

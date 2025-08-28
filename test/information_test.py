@@ -1,5 +1,3 @@
-import pytest
-
 from src.information import apis
 from src.open_meteo.api import OpenMeteoAPI, OpenMeteoConfig
 

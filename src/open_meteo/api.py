@@ -4,8 +4,8 @@ from retry_requests import retry
 from dataclasses import dataclass
 from loguru import logger
 
-from src.api import WeatherAPI, Config
-from src.errors import SettingsError, UnknownApiError
+from src.api import WeatherAPI, ConfigAPI
+from src.errors import SettingError, ApiError
 from src.models import Coordinates
 from .forecast import ForecastEndpoint
 from .geo import GeoEndpoint
@@ -52,19 +52,18 @@ class OpenMeteoAPI(WeatherAPI):
             self.add_endpoint(ForecastEndpoint(self))
         except Exception as e:
             logger.error(f"Unknown API error: {e}")
-            raise UnknownApiError("Unknown API error")
-
+            raise ApiError("Unknown API error")
 
     def check(self, **kwargs):
-        """Проверяет настройки API"""
+        """Check API settings"""
         if self.id is None and self.city is None and self.coordinates is None:
-            raise SettingsError(
+            raise SettingError(
                 "Please set at least one setting: id, city, or coordinates"
             )
 
 
 @dataclass
-class OpenMeteoConfig(Config):
+class OpenMeteoConfig(ConfigAPI):
     id: int | None = None
     api_key: str | None = None
     country: str | None = None

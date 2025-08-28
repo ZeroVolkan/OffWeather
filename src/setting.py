@@ -1,8 +1,9 @@
-from typing import Union, Callable
+from typing import Callable
 import toml
 import os
 
 from .errors import ConfigError
+from .utils import safe_cast, unwrap_union_type
 
 
 class Setting:
@@ -58,20 +59,16 @@ class Setting:
         if value is None:
             return None
 
-        # Union and types.UnionType
-        if hasattr(annotation, "__origin__") and annotation.__origin__ is Union:
-            return self._cast_union(value, annotation.__args__)
-        if hasattr(annotation, "__args__"):  # Python 3.10+
-            return self._cast_union(value, annotation.__args__)
-
-        return annotation(value)
-
-    def _cast_union(self, value, args):
-        """Finds the first non-None type from Union and casts the value."""
-        for arg in args:
-            if arg is not type(None):
-                return arg(value)
-        return None
+        try:
+            # Try to unwrap union type and cast
+            target_type = unwrap_union_type(annotation)
+            return safe_cast(target_type, value)
+        except (ValueError, TypeError):
+            # If unwrapping fails, try direct casting
+            try:
+                return annotation(value)
+            except (ValueError, TypeError):
+                return value
 
     def fetch(self, obj: Callable, path: list[str]):
         """Fetch values from a TOML path and cast them to types from a class's annotations."""
@@ -82,8 +79,8 @@ class Setting:
         except KeyError:
             return obj()
 
-        if hasattr(obj, "__dict__"):
-            raise ConfigError("Class don't have __annotation__")
+        if not hasattr(obj, "__annotations__"):
+            raise ConfigError("Class doesn't have __annotations__")
 
         kwargs = {}
         for name, annotation in obj.__annotations__.items():

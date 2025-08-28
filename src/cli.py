@@ -4,7 +4,7 @@ from loguru import logger
 from typing import cast
 from types import UnionType
 
-from .api import WeatherAPI, Config
+from .api import WeatherAPI, ConfigAPI
 from .setting import Setting
 from .errors import ApiError, EndpointError, ConfigError
 from .utils import unwrap_and_cast, unwrap_union_type
@@ -19,7 +19,7 @@ class DebugShell(cmd.Cmd):
     def __init__(self):
         super().__init__()
         self.api: WeatherAPI | None = None
-        self.config: Config | None = None
+        self.config: ConfigAPI | None = None
         self.selected: str | None = None
         self.setting: Setting = Setting("setting.toml")
         logger.add(".log/debug.log")
@@ -61,9 +61,7 @@ class DebugShell(cmd.Cmd):
                     print("No API selected.")
                     return
                 try:
-                    self.api = self.apis[self.selected]["class"](
-                        asdict(self.config)
-                    )
+                    self.api = self.apis[self.selected]["class"](asdict(self.config))
                     logger.info(f"Created instance for API: {self.selected}")
                 except ApiError as e:
                     print(f"Failed to create instance for API '{self.selected}': {e}")
@@ -107,7 +105,6 @@ class DebugShell(cmd.Cmd):
         if not SelectedConfig:
             print(f"❌ Configuration not found for API '{self.selected}'")
             return
-
 
         parts = args.split()
         command = parts[0] if parts else None

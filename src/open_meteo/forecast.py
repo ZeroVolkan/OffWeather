@@ -2,7 +2,7 @@ from loguru import logger
 import requests
 
 from src.api import WeatherEndpoint
-from src.errors import SettingsError, ResponseError
+from src.errors import SettingError, ResponseError
 
 
 class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
@@ -64,11 +64,13 @@ class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
             self.data = {"current": current, "daily": daily}
 
         else:
-            logger.error(f"{self.__class__.__name__} Error network request failed: {response.status_code}")
+            logger.error(
+                f"{self.__class__.__name__} Error network request failed: {response.status_code}"
+            )
             raise ResponseError(f"Network request failed: {response.status_code}")
 
     def check(self, **kwargs):
         """Check settings of Endpoint"""
         if self.latitude is None or self.longitude is None:
             logger.error("Coordinates not specified")
-            raise SettingsError("Coordinates not specified")
+            raise SettingError("Coordinates not specified")

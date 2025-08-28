@@ -145,5 +145,5 @@ class WeatherProcessor[T: WeatherAPI](ABC):
 
 
 @dataclass
-class Config(ABC):
+class ConfigAPI(ABC):
     pass

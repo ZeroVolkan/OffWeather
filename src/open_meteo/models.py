@@ -4,7 +4,7 @@ from enum import Enum
 from src.models import Coordinates
 
 
-# ----- Enum кодов погоды -----
+# ----- Weather code Enum -----
 class WeatherCode(Enum):
     CLEAR_SKY = 0
     MAINLY_CLEAR = 1
@@ -68,7 +68,7 @@ class WeatherCode(Enum):
         }.get(self, "Unknown weather code")
 
 
-# ----- Запрос -----
+# ----- Request -----
 class GeoRequest(BaseModel):
     id: int | None = None
     city: str
@@ -120,7 +120,7 @@ class DailyWeather(BaseModel):
     wind_direction_dominant: float
 
 
-# ----- Основная модель -----
+# ----- Main model -----
 class Weather(BaseModel):
     current: CurrentWeather
     daily: list[DailyWeather]
