@@ -56,6 +56,3 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
         if self.id is None and self.city is None:
             logger.error("id or city not specified")
             raise SettingError("id or city not specified")
-
-    def select_id(self, id: int | None = None):
-        self.id = id

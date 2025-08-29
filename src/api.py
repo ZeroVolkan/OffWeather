@@ -4,14 +4,33 @@ from dataclasses import dataclass
 from typing import final, Any
 from loguru import logger
 
-from .errors import EndpointError, ProcessorError
+from .errors import EndpointError, CommandError
+from .command import Command
+
+
+@dataclass
+class ConfigAPI(ABC):
+    pass
+
+
+class CommandAPI(Command):
+    def __init__(self, api: WeatherAPI) -> None:
+        super().__init__()
+        self.api = api
+
+    @abstractmethod
+    def execute(self):
+        pass
 
 
 class WeatherAPI(ABC):
     @abstractmethod
-    def __init__(self, **kwargs):
+    def __init__(self, config: ConfigAPI):
+        self.name: str = self.__class__.__name__
+        self.config = config
+
         self.endpoints: dict[str, WeatherEndpoint] = {}
-        self.processors: dict[str, WeatherProcessor] = {}
+        self.available_commands: dict[str, Command] = {}
 
     @final
     def add_endpoint(self, endpoint: WeatherEndpoint):
@@ -35,55 +54,11 @@ class WeatherAPI(ABC):
         raise EndpointError(f"Endpoint with name '{name}' does not exist")
 
     @final
-    def add_processor(self, processor: WeatherProcessor):
-        """Add processor"""
-        if processor.name in self.processors:
-            raise ProcessorError(
-                f"Processor with name '{processor.name}' already exists"
-            )
-        self.processors[processor.name] = processor
-
-    @final
-    def delete_processor(self, processor: WeatherProcessor):
-        """Remove processor"""
-        if processor.name not in self.processors:
-            raise ProcessorError(
-                f"Processor with name '{processor.name}' does not exist"
-            )
-        del self.processors[processor.name]
-
-    @final
-    def get_processor(self, name: str) -> WeatherProcessor:
-        """Get processor by name"""
-        if result := self.processors.get(name):
-            return result
-        raise ProcessorError(f"Processor with name '{name}' does not exist")
-
-    @final
     def refresh(self):
         """Refresh data for all endpoints"""
         logger.info(f"Refreshing endpoints {self.__class__.__name__}")
         for endpoint in self.endpoints.values():
             endpoint.refresh()
-
-    @final
-    def process(self):
-        """Process data from endpoints and pass to unified data model"""
-        logger.info(f"Processing data from endpoints {self.__class__.__name__}")
-        for processor in self.processors.values():
-            processor.run()
-
-    @final
-    def save(self):
-        """Save data to database"""
-        logger.info(f"Saving data from processors {self.__class__.__name__}")
-        for processor in self.processors.values():
-            processor.save()
-
-    @abstractmethod
-    def setting(self, resetup: bool = False, **kwargs):
-        """Change API settings"""
-        pass
 
     @abstractmethod
     def check(self):
@@ -92,7 +67,19 @@ class WeatherAPI(ABC):
 
     @abstractmethod
     def up(self):
+        """Start API"""
         pass
+
+    @final
+    def execute(self, command: Command | str):
+        """Execute Command"""
+
+        name = command.name if isinstance(command, Command) else command
+
+        if result := self.available_commands.get(name):
+            result.execute()
+        else:
+            raise CommandError(f"Avalible command with name '{name}' does not exist")
 
 
 class WeatherEndpoint[T: WeatherAPI](ABC):
@@ -113,37 +100,3 @@ class WeatherEndpoint[T: WeatherAPI](ABC):
     def check(self):
         """Check Endpoint"""
         pass
-
-
-class WeatherProcessor[T: WeatherAPI](ABC):
-    def __init__(self, **kwargs):
-        self.name: str = self.__class__.__name__
-        self._associations: dict[str, WeatherProcessor] = {}
-        self.data = []
-
-    @abstractmethod
-    def run(self):
-        """Process data from endpoints and pass to buffer for further processing"""
-        pass
-
-    @abstractmethod
-    def save(self):
-        """Save data to database"""
-        pass
-
-    @property
-    def associations(self):
-        return self._associations
-
-    @associations.setter
-    def associations(self, processor: WeatherProcessor):
-        self._associations[processor.name] = processor
-
-    @associations.deleter
-    def associations(self, processor: WeatherProcessor):
-        del self._associations[processor.name]
-
-
-@dataclass
-class ConfigAPI(ABC):
-    pass

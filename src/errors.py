@@ -2,13 +2,16 @@ class GeneralError(Exception):
     pass
 
 
-# General Errors for api
-class ApiError(GeneralError):
+class ConfigError(GeneralError):
     pass
 
 
-# Error for class ConfigAPI from api.py
-class ConfigError(ApiError):
+class CommandError(GeneralError):
+    pass
+
+
+# General Errors for api
+class ApiError(GeneralError):
     pass
 
 

@@ -1,5 +1,4 @@
 import cmd
-from dataclasses import asdict
 from loguru import logger
 from typing import cast
 from types import UnionType
@@ -61,7 +60,7 @@ class DebugShell(cmd.Cmd):
                     print("No API selected.")
                     return
                 try:
-                    self.api = self.apis[self.selected]["class"](asdict(self.config))
+                    self.api = self.apis[self.selected]["class"](self.config)
                     logger.info(f"Created instance for API: {self.selected}")
                 except ApiError as e:
                     print(f"Failed to create instance for API '{self.selected}': {e}")
@@ -73,6 +72,7 @@ class DebugShell(cmd.Cmd):
                     return
                 if self.api:
                     del self.api
+                    self.api = None
                 logger.info(f"Deleted instance for API: {self.selected}")
             case _:
                 print("Invalid command.")
@@ -213,23 +213,7 @@ class DebugShell(cmd.Cmd):
     def do_exit(self, args):
         """Exit the debug shell."""
         logger.info("Debug shell stopped")
-        return True
-
-    def do_processor(self, args):
-        """List available processors."""
-        logger.info("Listing available processors")
-        if self.api:
-            print(f"Available processors: {list(self.api.processors.keys())}")
-        else:
-            print("No API instance created")
-
-    def do_endpoint(self, args):
-        """List available endpoints."""
-        logger.info("Listing available endpoints")
-        if self.api:
-            print(f"Available endpoints: {list(self.api.endpoints.keys())}")
-        else:
-            print("No API instance created")
+        return 0
 
 
 if __name__ == "__main__":
