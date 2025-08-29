@@ -7,7 +7,7 @@ from .api import WeatherAPI, ConfigAPI
 from .setting import Setting
 from .errors import ApiError, EndpointError, ConfigError
 from .utils import unwrap_and_cast, unwrap_union_type
-from .information import apis
+from .static import apis
 
 
 class DebugShell(cmd.Cmd):
