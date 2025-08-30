@@ -5,53 +5,60 @@ from dataclasses import dataclass
 
 from .api import WeatherAPI
 from .errors import ProcessorError, CommandError
-from .command import Command
+from .static import services
 
 
 @dataclass
-class ConfigService(ABC):
+class ServiceConfig(ABC):
     pass
 
 
 class WeatherService(ABC):
-    @abstractmethod
-    def __init__(self, config: ConfigService):
-        self.name: str = self.__class__.__name__
-        self.config: ConfigService = config
 
-        self.available_commands: dict[str, Command] = {}
+    @abstractmethod
+    def __init__(self, config: ServiceConfig):
+        self.name: str = self.__class__.__name__
+        self.config: ServiceConfig = config
+
+        self.available_commands: dict[str, CommandService] = {}
         self.processors: dict[str, WeatherProcessor] = {}
 
-    @final
-    def add_processor(self, processor: WeatherProcessor):
-        """Add processor"""
-        if processor.name in self.processors:
-            raise ProcessorError(
-                f"Processor with name '{processor.name}' already exists"
-            )
-        self.processors[processor.name] = processor
+        self.services = services()
 
     @final
-    def delete_processor(self, processor: WeatherProcessor):
-        """Remove processor"""
-        if processor.name not in self.processors:
-            raise ProcessorError(
-                f"Processor with name '{processor.name}' does not exist"
-            )
-        del self.processors[processor.name]
+    def add(self, processor: str | WeatherProcessor):
+        """Add processor to service"""
+        name = processor.name if isinstance(processor, WeatherProcessor) else processor
+
+        if name in self.processors:
+            raise ProcessorError(f"Processor with name '{name}' already exists")
+
+        if isinstance(processor, WeatherProcessor):
+            self.processors[name] = processor
+        else:
+            self.processors[name] = self.services[self.name]["processors"][name](self)
 
     @final
-    def get_processor(self, name: str) -> WeatherProcessor:
+    def delete(self, processor: str | WeatherProcessor):
+        """Remove processor from service"""
+        name = processor.name if isinstance(processor, WeatherProcessor) else processor
+
+        if name not in self.processors:
+            raise ProcessorError(f"Processor with name '{name}' does not exist")
+        del self.processors[name]
+
+    @final
+    def get(self, name: str) -> WeatherProcessor:
         """Get processor by name"""
-        if result := self.processors.get(name):
-            return result
-        raise ProcessorError(f"Processor with name '{name}' does not exist")
+        if name not in self.processors:
+            raise ProcessorError(f"Processor with name '{name}' does not exist")
+        return self.processors[name]
 
     @final
-    def execute(self, command: Command | str):
+    def execute(self, command: CommandService | str):
         """Execute API"""
 
-        name = command.name if isinstance(command, Command) else command
+        name = command.name if isinstance(command, CommandService) else command
 
         if result := self.available_commands.get(name):
             result.execute()
@@ -86,3 +93,14 @@ class WeatherProcessor[T: WeatherAPI](ABC):
     @associations.deleter
     def associations(self, processor: WeatherProcessor):
         del self._associations[processor.name]
+
+
+class CommandService:
+    @abstractmethod
+    def __init__(self, api) -> None:
+        self.name: str = self.__class__.__name__
+        self.api = api
+
+    @abstractmethod
+    def execute(self):
+        pass

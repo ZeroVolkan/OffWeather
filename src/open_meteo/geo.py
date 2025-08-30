@@ -1,3 +1,4 @@
+from pydantic import BaseModel
 from loguru import logger
 import requests
 
@@ -5,25 +6,48 @@ from src.api import WeatherEndpoint
 from src.errors import ResponseError, SettingError
 
 
-class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
+class DataGeoEndpoint(BaseModel):
+    id: int
+    name: str
+    latitude: float
+    longitude: float
+    elevation: float
+    feature_code: str
+    country_code: str
+    admin1_id: int
+    admin2_id: int
+    admin3_id: int
+    admin4_id: int
+    timezone: str
+    population: int
+    postcodes: list[str]
+    country_id: int
+    country: str
+    admin1: str
+    admin2: str
+    admin3: str
+    admin4: str
+
+
+class DataGeoEndpointList(BaseModel):
+    results: list[DataGeoEndpoint]
+
+
+class GeoEndpoint(WeatherEndpoint):
     def __init__(
         self,
-        api: OpenMeteoAPI,
-        id: int | None = None,
-        city: str | None = None,
-        language: str | None = None,
-        country: str | None = None,
-        count: int | None = None,
+        api,
     ):
+        super().__init__(api)  # create attr name, api, data
         self.url = "https://geocoding-api.open-meteo.com/v1/search"
 
-        self.id = id
-        self.city = city
-        self.language = language
-        self.country = country
-        self.count = count
+        self.id = self.api.id
+        self.city = self.api.city
+        self.language = self.api.language
+        self.country = self.api.country
+        self.count = self.api.count
 
-        super().__init__(api)
+        self.check()
 
     def refresh(self, forced: bool = False):
         session: requests.Session = self.api.session
@@ -43,13 +67,7 @@ class GeoEndpoint[OpenMeteoAPI](WeatherEndpoint):
 
         response_data = response.json()
 
-        if self.id is None:
-            self.data = response_data["results"]
-        else:
-            for result in response_data["results"]:
-                if self.id == result["id"]:
-                    self.data = result
-                    break
+        self.data["DataGeoEndpoint"] = DataGeoEndpointList(**response_data["results"])
 
     def check(self):
         """Check settings of Endpoint"""

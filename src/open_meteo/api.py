@@ -7,8 +7,6 @@ from loguru import logger
 from src.api import WeatherAPI, ConfigAPI
 from src.errors import SettingError, ApiError
 from src.models import Coordinates
-from .forecast import ForecastEndpoint
-from .geo import GeoEndpoint
 
 
 @dataclass
@@ -45,17 +43,7 @@ class OpenMeteoAPI(WeatherAPI):
         self.check()
 
         try:
-            self.add_endpoint(
-                GeoEndpoint(
-                    self,
-                    id=self.id,
-                    city=self.city,
-                    language=self.language,
-                    country=self.country,
-                    count=self.count,
-                )
-            )
-            self.add_endpoint(ForecastEndpoint(self))
+            pass
         except Exception as e:
             logger.error(f"Unknown API error: {e}")
             raise ApiError("Unknown API error")

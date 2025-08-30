@@ -5,18 +5,16 @@ from src.api import WeatherEndpoint
 from src.errors import SettingError, ResponseError
 
 
-class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
+class ForecastEndpoint(WeatherEndpoint):
     def __init__(
         self,
-        api: OpenMeteoAPI,
-        latitude: float | None = None,
-        longitude: float | None = None,
+        api,
     ):
         super().__init__(api)
         self.url = "https://api.open-meteo.com/v1/forecast"
 
-        self.latitude = latitude
-        self.longitude = longitude
+        self.latitude = self.api.coordinates.latitude
+        self.longitude = self.api.coordinates.longitude
 
     def refresh(self):
         session: requests.Session = self.api.session
@@ -65,11 +63,11 @@ class ForecastEndpoint[OpenMeteoAPI](WeatherEndpoint):
 
         else:
             logger.error(
-                f"{self.__class__.__name__} Error network request failed: {response.status_code}"
+                f"{self.name} Error network request failed: {response.status_code}"
             )
             raise ResponseError(f"Network request failed: {response.status_code}")
 
-    def check(self, **kwargs):
+    def check(self):
         """Check settings of Endpoint"""
         if self.latitude is None or self.longitude is None:
             logger.error("Coordinates not specified")

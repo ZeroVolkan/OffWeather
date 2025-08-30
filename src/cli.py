@@ -13,7 +13,6 @@ from .static import apis
 class DebugShell(cmd.Cmd):
     prompt = "(debug) "
     intro = "Debug Shell for managing weather APIs"
-    apis = apis()
 
     def __init__(self):
         super().__init__()
@@ -23,6 +22,8 @@ class DebugShell(cmd.Cmd):
         self.setting: Setting = Setting("setting.toml")
         logger.add(".log/debug.log")
         logger.info("Debug shell started")
+
+        self.apis = apis()
 
     def do_api(self, args):
         """Manage api
@@ -199,7 +200,7 @@ class DebugShell(cmd.Cmd):
             print("❌ First create API")
             return
         try:
-            data = self.api.get_endpoint(endpoint or "GeoEndpoint").data
+            data = self.api.get(endpoint or "GeoEndpoint").data
             logger.info(f"Data retrieved from {endpoint}")
             print(f"Data {endpoint}: {data}")
         except EndpointError as e:
@@ -213,7 +214,7 @@ class DebugShell(cmd.Cmd):
     def do_exit(self, args):
         """Exit the debug shell."""
         logger.info("Debug shell stopped")
-        return 0
+        return 1
 
 
 if __name__ == "__main__":
