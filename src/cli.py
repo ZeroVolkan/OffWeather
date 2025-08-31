@@ -113,7 +113,7 @@ class DebugShell(cmd.Cmd):
         path = parts[1:] if len(parts) > 1 else None
 
         param = parts[1] if len(parts) > 1 else None
-        value = parts[2] if len(parts) > 2 else None
+        values = parts[2:] if len(parts) > 2 else [None]
 
         if not command:
             print(self.do_config.__doc__)
@@ -156,21 +156,20 @@ class DebugShell(cmd.Cmd):
                 annotation = cast(UnionType, self.config.__annotations__.get(param))
 
                 try:
-                    setattr(
-                        self.config,
-                        param,
-                        unwrap_and_cast(unwrap_union_type(annotation), value),
-                    )
+                    annotation = unwrap_union_type(annotation)
+                    values = unwrap_and_cast(annotation, values)
+
+                    setattr(self.config, param, values)
                 except (ValueError, TypeError) as e:
                     print(f"❌ {e}")
 
-                if not value:
+                if not values:
                     logger.info(
                         f"Configuration {SelectedConfig.__name__} clear {param}"
                     )
                 else:
                     logger.info(
-                        f"Configuration {SelectedConfig.__name__} set {param} to {value}"
+                        f"Configuration {SelectedConfig.__name__} set {param} to {values}"
                     )
             case "create":
                 if self.config:

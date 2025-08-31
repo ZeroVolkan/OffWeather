@@ -14,7 +14,6 @@ class ServiceConfig(ABC):
 
 
 class WeatherService(ABC):
-
     @abstractmethod
     def __init__(self, config: ServiceConfig):
         self.name: str = self.__class__.__name__
