@@ -1,20 +1,31 @@
 def apis():
+    from src.core.api import WeatherAPI, ConfigAPI
+    from src.core.commands import Add, Refresh, Delete
+
     from src.open_meteo.api import OpenMeteoAPI, OpenMeteoConfig
     from src.open_meteo.forecast import ForecastEndpoint
     from src.open_meteo.geo import GeoEndpoint
+    from src.open_meteo.commands import SelectGeo
 
     return {
+        "WeatherAPI": {
+            "class": WeatherAPI,
+            "config": ConfigAPI,
+            "endpoints": [],
+            "commands": [Add, Refresh, Delete],
+        },
         "OpenMeteoAPI": {
             "class": OpenMeteoAPI,
             "config": OpenMeteoConfig,
             "endpoints": [ForecastEndpoint, GeoEndpoint],
+            "commands": [SelectGeo],
         },
         # Add new APIs here
     }
 
 
 def services():
-    from src.service import WeatherService, WeatherProcessor, ServiceConfig
+    from src.core.service import WeatherService, WeatherProcessor, ServiceConfig
 
     return {
         "WeatherService": {

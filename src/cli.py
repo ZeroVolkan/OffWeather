@@ -3,11 +3,13 @@ from loguru import logger
 from typing import cast
 from types import UnionType
 
-from .api import WeatherAPI, ConfigAPI
+
+from .core.api import WeatherAPI, ConfigAPI
 from .setting import Setting
 from .errors import ApiError, EndpointError, ConfigError
 from .utils import unwrap_and_cast, unwrap_union_type
 from .static import apis
+
 
 
 class DebugShell(cmd.Cmd):
@@ -33,6 +35,7 @@ class DebugShell(cmd.Cmd):
         list : List available APIs
         up: Instance Api create
         down: Instance Api delete
+        show: Show selected API information
         """
         parts = args.split(maxsplit=2)
 
@@ -64,9 +67,11 @@ class DebugShell(cmd.Cmd):
                     self.api = self.apis[self.selected]["class"](self.config)
                     logger.info(f"Created instance for API: {self.selected}")
                 except ApiError as e:
-                    print(f"Failed to create instance for API '{self.selected}': {e}")
+                    print(f"Failed to create instance for API: {self.selected}': {e}")
+                    logger.error(f"Failed to create instance for API: {self.selected}': {e}")
                 except AttributeError as e:
-                    print(f"Failed to find API'{self.selected}': {e}")
+                    print(f"Failed to find API: '{self.selected}': {e}")
+                    logger.error(f"Failed to find API: '{self.selected}': {e}")
             case "down":
                 if self.selected is None:
                     print("No API selected.")
@@ -74,7 +79,17 @@ class DebugShell(cmd.Cmd):
                 if self.api:
                     del self.api
                     self.api = None
-                logger.info(f"Deleted instance for API: {self.selected}")
+                    logger.info(f"Deleted instance for API: {self.selected}")
+            case "show":
+                if self.selected is None:
+                    print("No API selected.")
+                    return
+                if self.api:
+                    print(f"API: {self.selected}")
+                    print(f"Config: {self.config}")
+                    print(f"Instance: {self.api}")
+                else:
+                    print(f"No instance for API: {self.selected}")
             case _:
                 print("Invalid command.")
                 print(self.do_api.__doc__)
@@ -190,7 +205,7 @@ class DebugShell(cmd.Cmd):
                 logger.info(f"Configuration {SelectedConfig.__name__} cleared")
             case _:
                 print("Invalid command.")
-                print(self.do_api.__doc__)
+                print(self.do_config.__doc__)
                 return
 
     def do_show(self, endpoint):
@@ -214,6 +229,27 @@ class DebugShell(cmd.Cmd):
         """Exit the debug shell."""
         logger.info("Debug shell stopped")
         return 1
+
+    def do_commands(self, args):
+        """List information about available commands"""
+        if not self.api:
+            print("❌ First create API")
+            return
+        if self.api.commands:
+            for name, command in self.api.commands.items():
+                print(f"Command {name}: {command.__doc__}")
+        else:
+            logger.error("❌ No commands available")
+            print("❌ No commands available")
+
+        return 0
+
+    def do_admin(self, args):
+        if not self.api:
+            print("❌ First create API")
+            return
+
+        self.api.commands
 
 
 if __name__ == "__main__":

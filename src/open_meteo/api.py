@@ -4,7 +4,7 @@ from retry_requests import retry
 from dataclasses import dataclass
 from loguru import logger
 
-from src.api import WeatherAPI, ConfigAPI
+from src.core.api import WeatherAPI, ConfigAPI
 from src.errors import SettingError, ApiError
 from src.models import Coordinates
 

@@ -56,7 +56,7 @@ class TestUnwrapAndCast:
     def test_non_callable_non_union_values(self):
         """Test that non-callable, non-union values raise ValueError"""
         # List is callable in Python (via isinstance check), so int([1,2,3]) raises TypeError
-        with pytest.raises(TypeError, match=r"int\(\) argument must be"):
+        with pytest.raises(ValueError):
             unwrap_and_cast(int, [1, 2, 3])  # List is callable but casting fails
 
     def test_truly_non_callable_values(self):
@@ -68,7 +68,7 @@ class TestUnwrapAndCast:
 
         non_callable_obj = NonCallableType()
 
-        with pytest.raises(TypeError):
+        with pytest.raises(ValueError, match=r"Cannot cast"):
             unwrap_and_cast(int, non_callable_obj)
 
         # Empty string

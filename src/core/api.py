@@ -1,28 +1,76 @@
-from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import final, Any
 from loguru import logger
 
-from .errors import EndpointError, CommandError
-from .static import apis
+import itertools as it
 
+from src.errors import EndpointError, CommandError
+from src.static import apis
+from src.utils import classproperty
 
 @dataclass
 class ConfigAPI(ABC):
     pass
 
 
+class WeatherEndpoint(ABC):
+    @classproperty
+    def name(cls) -> str:
+        return cls.__name__
+
+    @abstractmethod
+    def __init__(self, api):
+        self.api = api
+        self.data: dict[str, Any] = {}
+        logger.info(f"Initialized endpoint {self.name} with attributes {self.__dict__}")
+
+    @abstractmethod
+    def refresh(self):
+        """Update data for variables that store weather data"""
+        pass
+
+    @abstractmethod
+    def check(self):
+        """Check Endpoint"""
+        pass
+
+
+class CommandAPI(ABC):
+    @classproperty
+    def name(cls) -> str:
+        return cls.__name__
+
+    @abstractmethod
+    def __init__(self, api) -> None:
+        self.api = api
+
+    @abstractmethod
+    def execute(self) -> Any:
+        pass
+
+
 class WeatherAPI(ABC):
+    @classproperty
+    def name(cls) -> str:
+        return cls.__name__
+
     @abstractmethod
     def __init__(self, config: ConfigAPI):
-        self.name: str = self.__class__.__name__
         self.config = config
 
         self._endpoints: dict[str, WeatherEndpoint] = {}
         self._commands: dict[str, CommandAPI] = {}
 
         self.apis = apis()
+
+        self._all_commands: dict[str, CommandAPI] = {
+            command.name: command
+            for command in it.chain(
+                self.apis["WeatherAPI"]["commands"],
+                self.apis[self.name]["commands"],
+            )
+        }
 
     @final
     def add(self, endpoint: str | WeatherEndpoint):
@@ -72,13 +120,17 @@ class WeatherAPI(ABC):
         """Start API"""
         pass
 
+    def admin(self):
+        """Not-save command for gets all commands"""
+        self._commands.update(self._all_commands)
+
     @final
     def execute(self, command: CommandAPI | str):
         """Execute Command"""
 
         name = command.name if isinstance(command, CommandAPI) else command
 
-        if result := self._commands.get(name):
+        if result := self.commands.get(name):
             result.execute()
         else:
             raise CommandError(f"Avalible command with name '{name}' does not exist")
@@ -87,36 +139,25 @@ class WeatherAPI(ABC):
     def commands(self):
         return self._commands
 
+    @commands.setter
+    def commands(self, value: str):
+        if item := self._all_commands.get(value):
+            self.commands[value] = item
+        raise CommandError("This command don't exist in class")
+
+    @commands.deleter
+    def commands(self):
+        del self._commands
+        self._commands = dict()
+
     @property
     def endpoints(self):
         return self._endpoints
 
+    @endpoints.setter
+    def endpoints(self, value: str | WeatherEndpoint):
+        self.add(value)
 
-class WeatherEndpoint(ABC):
-    @abstractmethod
-    def __init__(self, api):
-        self.name: str = self.__class__.__name__
-        self.api = api
-        self.data: dict[str, Any] = {}
-        logger.info(f"Initialized endpoint {self.name} with attributes {self.__dict__}")
-
-    @abstractmethod
-    def refresh(self):
-        """Update data for variables that store weather data"""
-        pass
-
-    @abstractmethod
-    def check(self):
-        """Check Endpoint"""
-        pass
-
-
-class CommandAPI:
-    @abstractmethod
-    def __init__(self, api) -> None:
-        self.name: str = self.__class__.__name__
-        self.api = api
-
-    @abstractmethod
-    def execute(self) -> Any:
-        pass
+    @endpoints.deleter
+    def endpoints(self):
+        self._endpoints.clear()

@@ -6,6 +6,14 @@ from pydantic import BaseModel
 
 import inspect
 
+class classproperty:
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, instance, owner):
+        return self.func(owner)
+
+
 def unwrap_union_type[T](union_type: type[T] | UnionType) -> T:
     """Extract non-None type from Union[T, None] or T | None. Returns the actual type T."""
     origin = get_origin(union_type)
@@ -34,6 +42,7 @@ def safe_unwrap_union_type(union_type: type | UnionType, default_type: type) -> 
         return result
     except (ValueError, TypeError):
         return default_type
+
 
 def unwrap_and_cast[T](target_type: type[T], value) -> T:
     """Cast value to target_type. Supports Union[T, None], containers (list, tuple, dict) and Pydantic models."""
@@ -78,14 +87,16 @@ def unwrap_and_cast[T](target_type: type[T], value) -> T:
 
         if isinstance(value, (list, tuple)):
             if len(value) != len(fields):
-                raise ValueError(f"{target_type.__name__} ожидает {len(fields)} полей, получено {len(value)}")
+                raise ValueError(
+                    f"{target_type.__name__} ожидает {len(fields)} полей, получено {len(value)}"
+                )
             casted = {
-                f: unwrap_and_cast(target_type.model_fields[f].annotation, v) # type: ignore
+                f: unwrap_and_cast(target_type.model_fields[f].annotation, v)  # type: ignore
                 for f, v in zip(fields, value)
             }
             return target_type(**casted)  # type: ignore
 
-        raise ValueError(f"Нельзя привести {type(value)} к {target_type}")
+        raise ValueError(f"Cannot cast {type(value)} to {target_type}")
 
     # ---- Простой тип ----
     try:

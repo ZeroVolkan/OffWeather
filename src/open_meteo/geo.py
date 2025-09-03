@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from loguru import logger
 import requests
 
-from src.api import WeatherEndpoint
+from src.core.api import WeatherEndpoint
 from src.errors import ResponseError, SettingError
 
 

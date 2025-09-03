@@ -4,9 +4,9 @@ from typing import final
 from dataclasses import dataclass
 
 from .api import WeatherAPI
-from .errors import ProcessorError, CommandError
-from .static import services
-
+from src.errors import ProcessorError, CommandError
+from src.static import services
+from src.utils import classproperty
 
 @dataclass
 class ServiceConfig(ABC):
@@ -14,9 +14,12 @@ class ServiceConfig(ABC):
 
 
 class WeatherService(ABC):
+    @classproperty
+    def name(cls) -> str:
+        return cls.__name__
+
     @abstractmethod
     def __init__(self, config: ServiceConfig):
-        self.name: str = self.__class__.__name__
         self.config: ServiceConfig = config
 
         self.available_commands: dict[str, CommandService] = {}

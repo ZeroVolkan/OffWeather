@@ -1,7 +1,9 @@
 from src.static import apis
 
+
 def test_apis_function():
     from src.open_meteo.api import OpenMeteoAPI, OpenMeteoConfig
+
     """Test that apis function returns correct API information."""
     api_info = apis()
     assert "OpenMeteoAPI" in api_info
@@ -20,6 +22,7 @@ def test_apis_structure():
 def test_open_meteo_api():
     """Test open_meteo API configuration."""
     from src.open_meteo.api import OpenMeteoAPI, OpenMeteoConfig
+
     api_info = apis()
     open_meteo = api_info["OpenMeteoAPI"]
     assert open_meteo["class"] == OpenMeteoAPI

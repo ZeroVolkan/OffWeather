@@ -3,8 +3,8 @@ from loguru import logger
 from .api import OpenMeteoAPI
 from .geo import DataGeoEndpointList
 
+from src.core.api import CommandAPI
 from src.errors import SettingError, CommandError
-from src.api import CommandAPI
 from src.models import Coordinates
 
 

@@ -1,11 +1,11 @@
 from .api import WeatherAPI, CommandAPI
-from .errors import SettingError
+from src.errors import SettingError
 from loguru import logger
 
 
-class Up(CommandAPI):
+class Add(CommandAPI):
+    """Add new endpoint to api"""
     def __init__(self, api: WeatherAPI) -> None:
-        self.name: str = self.__class__.__name__
         self.api: WeatherAPI = api
 
     def execute(self, name: str | None = None):
@@ -18,8 +18,9 @@ class Up(CommandAPI):
 
 
 class Refresh(CommandAPI):
+    """Refresh endpoint from api"""
+
     def __init__(self, api: WeatherAPI) -> None:
-        self.name: str = self.__class__.__name__
         self.api: WeatherAPI = api
 
     def execute(self, name: str | None = None):
@@ -32,9 +33,10 @@ class Refresh(CommandAPI):
         logger.info(f"{geo.name} refreshed")
 
 
-class Down(CommandAPI):
+class Delete(CommandAPI):
+    """Delete endpoint from WeatherAPI"""
+
     def __init__(self, api: WeatherAPI) -> None:
-        self.name: str = self.__class__.__name__
         self.api: WeatherAPI = api
 
     def execute(self, name: str | None = None):
