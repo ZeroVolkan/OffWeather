@@ -10,7 +10,6 @@ from src.models import Coordinates
 
 class SelectGeo(CommandAPI):
     def __init__(self, api: OpenMeteoAPI) -> None:
-        self.name: str = self.__class__.__name__
         self.api: OpenMeteoAPI = api
 
     def execute(self, id: int | None = None):

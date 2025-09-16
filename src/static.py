@@ -1,6 +1,6 @@
 def apis():
     from src.core.api import WeatherAPI, ConfigAPI
-    from src.core.commands import Add, Refresh, Delete
+    from src.core.commands import Add, Refresh, Delete, Data
 
     from src.open_meteo.api import OpenMeteoAPI, OpenMeteoConfig
     from src.open_meteo.forecast import ForecastEndpoint
@@ -12,7 +12,7 @@ def apis():
             "class": WeatherAPI,
             "config": ConfigAPI,
             "endpoints": [],
-            "commands": [Add, Refresh, Delete],
+            "commands": [Add, Refresh, Delete, Data],
         },
         "OpenMeteoAPI": {
             "class": OpenMeteoAPI,

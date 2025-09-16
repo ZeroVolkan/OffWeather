@@ -9,6 +9,7 @@ from src.errors import EndpointError, CommandError
 from src.static import apis
 from src.utils import classproperty
 
+
 @dataclass
 class ConfigAPI(ABC):
     pass
@@ -120,18 +121,19 @@ class WeatherAPI(ABC):
         """Start API"""
         pass
 
+    @final
     def admin(self):
         """Not-save command for gets all commands"""
-        self._commands.update(self._all_commands)
+        self._commands.update({key: value(self) for key, value in self._all_commands.items()}) # type: ignore
 
     @final
-    def execute(self, command: CommandAPI | str):
+    def execute(self, command: CommandAPI | str, *args, **kwargs):
         """Execute Command"""
 
         name = command.name if isinstance(command, CommandAPI) else command
 
         if result := self.commands.get(name):
-            result.execute()
+            result.execute(*args, **kwargs)
         else:
             raise CommandError(f"Avalible command with name '{name}' does not exist")
 

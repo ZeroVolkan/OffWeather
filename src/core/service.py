@@ -8,6 +8,7 @@ from src.errors import ProcessorError, CommandError
 from src.static import services
 from src.utils import classproperty
 
+
 @dataclass
 class ServiceConfig(ABC):
     pass

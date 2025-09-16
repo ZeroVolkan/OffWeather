@@ -1,2 +1,7 @@
 [open-meteo]
 city = "Moscow"
+
+[open-meteo.workflow]
+great-workflow = [
+    {command="Add", name=""}
+]

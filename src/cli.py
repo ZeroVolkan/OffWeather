@@ -2,14 +2,19 @@ import cmd
 from loguru import logger
 from typing import cast
 from types import UnionType
-
+from dataclasses import dataclass
 
 from .core.api import WeatherAPI, ConfigAPI
 from .setting import Setting
-from .errors import ApiError, EndpointError, ConfigError
-from .utils import unwrap_and_cast, unwrap_union_type
+from .errors import ApiError, EndpointError, ConfigError, CommandError, SettingError
+from .utils import unwrap_and_cast, unwrap_union_type, parser_arguments
 from .static import apis
 
+# TODO
+@dataclass
+class Workflow:
+    name: str
+    steps: list[tuple[str, list[str]]]
 
 
 class DebugShell(cmd.Cmd):
@@ -21,9 +26,12 @@ class DebugShell(cmd.Cmd):
         self.api: WeatherAPI | None = None
         self.config: ConfigAPI | None = None
         self.selected: str | None = None
+
         self.setting: Setting = Setting("setting.toml")
         logger.add(".log/debug.log")
         logger.info("Debug shell started")
+
+        self.workflows: dict[str, Workflow] = {}
 
         self.apis = apis()
 
@@ -68,7 +76,9 @@ class DebugShell(cmd.Cmd):
                     logger.info(f"Created instance for API: {self.selected}")
                 except ApiError as e:
                     print(f"Failed to create instance for API: {self.selected}': {e}")
-                    logger.error(f"Failed to create instance for API: {self.selected}': {e}")
+                    logger.error(
+                        f"Failed to create instance for API: {self.selected}': {e}"
+                    )
                 except AttributeError as e:
                     print(f"Failed to find API: '{self.selected}': {e}")
                     logger.error(f"Failed to find API: '{self.selected}': {e}")
@@ -221,6 +231,7 @@ class DebugShell(cmd.Cmd):
             logger.error(f"Error getting data from {endpoint}: {e}")
             print(f"❌ Error getting data from {endpoint}: {e}")
 
+    # TODO
     def do_status(self, args):
         """Show status cli"""
         pass
@@ -241,15 +252,54 @@ class DebugShell(cmd.Cmd):
         else:
             logger.error("❌ No commands available")
             print("❌ No commands available")
-
         return 0
 
     def do_admin(self, args):
+        """Allow all available commands"""
         if not self.api:
             print("❌ First create API")
             return
 
-        self.api.commands
+        self.api.admin()
+        self.do_commands(args)
+
+    def do_execute(self, args: str):
+        """Run an available command
+
+            Supports:
+            - execute 'Command' arguments (positional)
+            - execute 'Command' key=value (named)
+        """
+        if not self.api:
+            print("❌ First create API")
+            return
+
+        parts = args.split()
+
+        if len(parts) == 0:
+            raise ValueError("No command provided")
+
+        command = parts[0]
+        argumets, kwargs = parser_arguments(parts[1:])
+
+        try:
+            logger.info(f"Executing command {command} with params {argumets, kwargs}")
+            self.api.execute(command, *argumets, **kwargs)
+        except CommandError as e:
+            logger.error(f"Error executing command {command}: {e}")
+            print(f"❌ Error executing command {command}: {e}")
+        except SettingError as e:
+            logger.error(f"Error setting command {command}: {e}")
+            print(f"❌ Error setting command {command}: {e}")
+        except Exception as e:
+            logger.error(f"Unexpected error executing command {command}: {e}")
+            print(f"❌ Unexpected error executing command {command}: {e}")
+
+    def do_workflow(self, args):
+        """Works with workflow"""
+        # TODO
+        if not self.selected:
+            raise ValueError("No API selected")
 
 
 if __name__ == "__main__":

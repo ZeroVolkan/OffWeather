@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 import inspect
 
+
 class classproperty:
     def __init__(self, func):
         self.func = func
@@ -105,27 +106,6 @@ def unwrap_and_cast[T](target_type: type[T], value) -> T:
         raise ValueError(f"Cannot cast {value!r} to {target_type}: {e}")
 
 
-# def unwrap_and_cast[T](target_type: type[T], value) -> T:
-#     """Cast value to target_type. Supports Union[T, None] types. Raises ValueError if value is None."""
-#     if value is None:
-#         raise ValueError("Cannot unwrap None value")
-
-#     # Handle Union types (both typing.Union and | syntax)
-#     origin = type(value)
-
-#     if origin is Union:
-#         args = list(filter(lambda x: x is not None, get_args(origin)))
-
-#         if len(args) == 1:
-#             origin = args[0]
-#         else:
-#             raise ValueError(f"Cannot cast {value} to {target_type}")
-
-#     if isinstance(origin, Callable):
-#         return target_type(value)  # pyright: ignore[reportCallIssue]
-#     raise ValueError(f"Cannot cast {value} to {target_type}")
-
-
 def safe_cast[T](target_type: type[T], value: Any, default: Any = None) -> T | None:
     """Safely cast value to target_type, returns default if value is None."""
     if value is None:
@@ -138,3 +118,17 @@ def safe_cast[T](target_type: type[T], value: Any, default: Any = None) -> T | N
         if "Cannot unwrap None value" in str(e):
             raise
         return default
+
+
+def parser_arguments(arguments: list[str]) -> tuple[list[str], dict[str, str]]:
+    positional = []
+    named = dict()
+
+    for arg in arguments:
+        if '=' in arg:
+            key, value = arg.split('=', 1)
+            named[key] = value
+        else:
+            positional.append(arg)
+
+    return positional, named
