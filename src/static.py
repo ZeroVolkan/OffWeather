@@ -36,3 +36,14 @@ def services():
             ],
         }
     }
+
+
+def workflows():
+    from src.workflow import basis
+
+    return {
+        "basis": {
+            "description": "Base workflow for weather data",
+            "executable": basis
+        }
+    }

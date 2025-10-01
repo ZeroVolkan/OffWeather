@@ -1,20 +1,16 @@
 import cmd
+import src.static as static
+
 from loguru import logger
-from typing import cast
+from typing import Callable, cast
 from types import UnionType
 from dataclasses import dataclass
+
 
 from .core.api import WeatherAPI, ConfigAPI
 from .setting import Setting
 from .errors import ApiError, EndpointError, ConfigError, CommandError, SettingError
 from .utils import unwrap_and_cast, unwrap_union_type, parser_arguments
-from .static import apis
-
-# TODO
-@dataclass
-class Workflow:
-    name: str
-    steps: list[tuple[str, list[str]]]
 
 
 class DebugShell(cmd.Cmd):
@@ -31,9 +27,9 @@ class DebugShell(cmd.Cmd):
         logger.add(".log/debug.log")
         logger.info("Debug shell started")
 
-        self.workflows: dict[str, Workflow] = {}
+        self.apis = static.apis()
+        self.workflows = static.workflows()
 
-        self.apis = apis()
 
     def do_api(self, args):
         """Manage api
@@ -296,11 +292,43 @@ class DebugShell(cmd.Cmd):
             print(f"❌ Unexpected error executing command {command}: {e}")
 
     def do_workflow(self, args):
-        """Works with workflow"""
-        # TODO
-        if not self.selected:
-            raise ValueError("No API selected")
+        """Works with workflow
 
+        Usage [command] [name]
+        - show: show all workflows
+        - run: run a workflow
+        """
+        try:
+            parts = args.strip().split(" ")
+
+            if len(parts) == 2:
+                command, name = parts
+            elif len(parts) == 1:
+                command, name = parts[0], None
+            else:
+                print(self.do_workflow.__doc__)
+                return
+
+            match command:
+                case "show":
+                    for key, value in self.workflows.items():
+                        print(f"{key}: {value["description"]}")
+                case "run" if name:
+                    workflow = self.workflows[name]
+                    workflow["executable"](self)
+                    print(f"workflow {name} started")
+                    logger.info(f"Workflow {name} started")
+                case _:
+                    print(self.do_workflow.__doc__)
+
+        except FileNotFoundError as e:
+            logger.error(f"Workflow file not found")
+            print(f"❌ Workflow file not found")
+        except Exception as e:
+            logger.error(f"Error workflow: {e}")
+            print(f"❌ Error workflow: {e}")
+
+debug_shell = DebugShell()
 
 if __name__ == "__main__":
-    DebugShell().cmdloop()
+    debug_shell.cmdloop()
