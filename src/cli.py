@@ -71,12 +71,10 @@ class DebugShell(cmd.Cmd):
                     self.api = self.apis[self.selected]["class"](self.config)
                     logger.info(f"Created instance for API: {self.selected}")
                 except ApiError as e:
-                    print(f"Failed to create instance for API: {self.selected}': {e}")
                     logger.error(
                         f"Failed to create instance for API: {self.selected}': {e}"
                     )
                 except AttributeError as e:
-                    print(f"Failed to find API: '{self.selected}': {e}")
                     logger.error(f"Failed to find API: '{self.selected}': {e}")
             case "down":
                 if self.selected is None:
@@ -225,7 +223,6 @@ class DebugShell(cmd.Cmd):
             print(f"Data {endpoint}: {data}")
         except EndpointError as e:
             logger.error(f"Error getting data from {endpoint}: {e}")
-            print(f"❌ Error getting data from {endpoint}: {e}")
 
     # TODO
     def do_status(self, args):
@@ -247,7 +244,6 @@ class DebugShell(cmd.Cmd):
                 print(f"Command {name}: {command.__doc__}")
         else:
             logger.error("❌ No commands available")
-            print("❌ No commands available")
         return 0
 
     def do_admin(self, args):
@@ -257,7 +253,7 @@ class DebugShell(cmd.Cmd):
             return
 
         self.api.admin()
-        self.do_commands(args)
+        logger.info("All commands available")
 
     def do_execute(self, args: str):
         """Run an available command
@@ -283,13 +279,10 @@ class DebugShell(cmd.Cmd):
             self.api.execute(command, *argumets, **kwargs)
         except CommandError as e:
             logger.error(f"Error executing command {command}: {e}")
-            print(f"❌ Error executing command {command}: {e}")
         except SettingError as e:
             logger.error(f"Error setting command {command}: {e}")
-            print(f"❌ Error setting command {command}: {e}")
         except Exception as e:
             logger.error(f"Unexpected error executing command {command}: {e}")
-            print(f"❌ Unexpected error executing command {command}: {e}")
 
     def do_workflow(self, args):
         """Works with workflow
@@ -316,17 +309,14 @@ class DebugShell(cmd.Cmd):
                 case "run" if name:
                     workflow = self.workflows[name]
                     workflow["executable"](self)
-                    print(f"workflow {name} started")
                     logger.info(f"Workflow {name} started")
                 case _:
                     print(self.do_workflow.__doc__)
 
         except FileNotFoundError as e:
             logger.error(f"Workflow file not found")
-            print(f"❌ Workflow file not found")
         except Exception as e:
             logger.error(f"Error workflow: {e}")
-            print(f"❌ Error workflow: {e}")
 
 debug_shell = DebugShell()
 

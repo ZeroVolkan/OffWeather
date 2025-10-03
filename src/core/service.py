@@ -93,9 +93,6 @@ class WeatherProcessor[T: WeatherAPI](ABC):
     def associations(self, processor: WeatherProcessor):
         self._associations[processor.name] = processor
 
-    @associations.deleter
-    def associations(self, processor: WeatherProcessor):
-        del self._associations[processor.name]
 
 
 class CommandService:

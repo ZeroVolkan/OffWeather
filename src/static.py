@@ -12,13 +12,16 @@ def apis():
             "class": WeatherAPI,
             "config": ConfigAPI,
             "endpoints": [],
-            "commands": [Add, Refresh, Delete, Data],
+            "commands": {"add": Add, "refresh": Refresh, "delete": Delete, "data": Data},
         },
         "OpenMeteoAPI": {
             "class": OpenMeteoAPI,
             "config": OpenMeteoConfig,
-            "endpoints": [ForecastEndpoint, GeoEndpoint],
-            "commands": [SelectGeo],
+            "endpoints": {
+                "forecast": ForecastEndpoint,
+                "geo": GeoEndpoint,
+            },
+            "commands": {"select_geo": SelectGeo},
         },
         # Add new APIs here
     }

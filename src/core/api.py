@@ -66,10 +66,10 @@ class WeatherAPI(ABC):
         self.apis = apis()
 
         self._all_commands: dict[str, CommandAPI] = {
-            command.name: command
+            command[0]: command[1]
             for command in it.chain(
-                self.apis["WeatherAPI"]["commands"],
-                self.apis[self.name]["commands"],
+                self.apis["WeatherAPI"]["commands"].items(),
+                self.apis[self.name]["commands"].items(),
             )
         }
 
@@ -129,7 +129,6 @@ class WeatherAPI(ABC):
     @final
     def execute(self, command: CommandAPI | str, *args, **kwargs):
         """Execute Command"""
-
         name = command.name if isinstance(command, CommandAPI) else command
 
         if result := self.commands.get(name):

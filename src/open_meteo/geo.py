@@ -66,7 +66,6 @@ class GeoEndpoint(WeatherEndpoint):
             raise ResponseError(f"Error network request failed: {response.status_code}")
 
         response_data = response.json()
-
         self.data["DataGeoEndpoint"] = DataGeoEndpointList(**response_data["results"])
 
     def check(self):
