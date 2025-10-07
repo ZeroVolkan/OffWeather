@@ -94,7 +94,6 @@ class WeatherProcessor[T: WeatherAPI](ABC):
         self._associations[processor.name] = processor
 
 
-
 class CommandService:
     @abstractmethod
     def __init__(self, api) -> None:

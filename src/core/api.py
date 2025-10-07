@@ -124,7 +124,9 @@ class WeatherAPI(ABC):
     @final
     def admin(self):
         """Not-save command for gets all commands"""
-        self._commands.update({key: value(self) for key, value in self._all_commands.items()}) # type: ignore
+        self._commands.update(
+            {key: value(self) for key, value in self._all_commands.items()} # type: ignore
+        )
 
     @final
     def execute(self, command: CommandAPI | str, *args, **kwargs):

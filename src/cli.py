@@ -30,7 +30,6 @@ class DebugShell(cmd.Cmd):
         self.apis = static.apis()
         self.workflows = static.workflows()
 
-
     def do_api(self, args):
         """Manage api
 
@@ -212,22 +211,14 @@ class DebugShell(cmd.Cmd):
                 print(self.do_config.__doc__)
                 return
 
-    def do_show(self, endpoint):
-        """Show data from an endpoint: show GeoEndpoint"""
-        if not self.api:
-            print("❌ First create API")
-            return
-        try:
-            data = self.api.get(endpoint or "GeoEndpoint").data
-            logger.info(f"Data retrieved from {endpoint}")
-            print(f"Data {endpoint}: {data}")
-        except EndpointError as e:
-            logger.error(f"Error getting data from {endpoint}: {e}")
-
-    # TODO
     def do_status(self, args):
         """Show status cli"""
-        pass
+        print(f"{self.selected}: {self.api} - All: {', '.join(self.apis.keys())}")
+        if self.api:
+            print(f"    Avalible: {', '.join(self.api.commands.keys()) if self.api.commands else "Don't commands available"}")
+            print(f"    Endpoint: {', '.join(self.api.endpoints.keys()) if self.api.endpoints else "Don't endpoints available"}")
+        print(f"Config: {self.config if self.config else "Don't have config"}")
+
 
     def do_exit(self, args):
         """Exit the debug shell."""
@@ -243,10 +234,10 @@ class DebugShell(cmd.Cmd):
             for name, command in self.api.commands.items():
                 print(f"Command {name}: {command.__doc__}")
         else:
-            logger.error("❌ No commands available")
+            print("❌ No commands available")
         return 0
 
-    def do_admin(self, args):
+    def do_unsafe(self, args):
         """Allow all available commands"""
         if not self.api:
             print("❌ First create API")
@@ -258,9 +249,7 @@ class DebugShell(cmd.Cmd):
     def do_execute(self, args: str):
         """Run an available command
 
-            Supports:
-            - execute 'Command' arguments (positional)
-            - execute 'Command' key=value (named)
+        - execute 'Command' arguments (positional) key=value (named)
         """
         if not self.api:
             print("❌ First create API")
@@ -284,39 +273,26 @@ class DebugShell(cmd.Cmd):
         except Exception as e:
             logger.error(f"Unexpected error executing command {command}: {e}")
 
-    def do_workflow(self, args):
+    def do_workflow(self, argument):
         """Works with workflow
 
-        Usage [command] [name]
-        - show: show all workflows
-        - run: run a workflow
+        Usage [name]
+        - None: show all workflows
+        - With name: run a workflow
         """
         try:
-            parts = args.strip().split(" ")
-
-            if len(parts) == 2:
-                command, name = parts
-            elif len(parts) == 1:
-                command, name = parts[0], None
+            if argument:
+                workflow = self.workflows[argument]
+                workflow["executable"](self)
+                logger.info(f"Workflow {argument} started")
             else:
-                print(self.do_workflow.__doc__)
-                return
-
-            match command:
-                case "show":
-                    for key, value in self.workflows.items():
-                        print(f"{key}: {value["description"]}")
-                case "run" if name:
-                    workflow = self.workflows[name]
-                    workflow["executable"](self)
-                    logger.info(f"Workflow {name} started")
-                case _:
-                    print(self.do_workflow.__doc__)
-
+                for key, value in self.workflows.items():
+                    print(f"{key}: {value['description']}")
         except FileNotFoundError as e:
-            logger.error(f"Workflow file not found")
+            logger.error(f"Workflow file don't found")
         except Exception as e:
             logger.error(f"Error workflow: {e}")
+
 
 debug_shell = DebugShell()
 

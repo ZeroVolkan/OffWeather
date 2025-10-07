@@ -12,7 +12,12 @@ def apis():
             "class": WeatherAPI,
             "config": ConfigAPI,
             "endpoints": [],
-            "commands": {"add": Add, "refresh": Refresh, "delete": Delete, "data": Data},
+            "commands": {
+                "add": Add,
+                "refresh": Refresh,
+                "delete": Delete,
+                "data": Data,
+            },
         },
         "OpenMeteoAPI": {
             "class": OpenMeteoAPI,
@@ -45,8 +50,5 @@ def workflows():
     from src.workflow import basis
 
     return {
-        "basis": {
-            "description": "Base workflow for weather data",
-            "executable": basis
-        }
+        "basis": {"description": "Base workflow for weather data", "executable": basis}
     }

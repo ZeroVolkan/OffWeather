@@ -3,6 +3,6 @@ def basis(shell) -> None:
         shell.do_api("select OpenMeteoAPI")
         shell.do_config("fetch open-meteo")
         shell.do_api("up")
-        shell.do_admin("")
+        shell.do_unsafe("")
     except Exception as e:
         print(f"An error occurred: {e}")

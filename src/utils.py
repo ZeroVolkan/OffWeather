@@ -125,8 +125,8 @@ def parser_arguments(arguments: list[str]) -> tuple[list[str], dict[str, str]]:
     named = dict()
 
     for arg in arguments:
-        if '=' in arg:
-            key, value = arg.split('=', 1)
+        if "=" in arg:
+            key, value = arg.split("=", 1)
             named[key] = value
         else:
             positional.append(arg)
