@@ -60,7 +60,7 @@ def unwrap_and_cast[T](target_type: type[T], value) -> T:
         else:
             raise ValueError(f"Union {target_type} слишком сложный")
 
-    # ---- Контейнеры ----
+    # ---- Containers ----
     if origin is list:
         (elem_type,) = get_args(target_type)
         return [unwrap_and_cast(elem_type, v) for v in value]  # type: ignore
@@ -79,7 +79,7 @@ def unwrap_and_cast[T](target_type: type[T], value) -> T:
             for k, v in value.items()
         }  # type: ignore
 
-    # ---- Pydantic модели ----
+    # ---- Pydantic models ----
     if inspect.isclass(target_type) and issubclass(target_type, BaseModel):
         fields = list(target_type.model_fields.keys())
 
@@ -99,7 +99,7 @@ def unwrap_and_cast[T](target_type: type[T], value) -> T:
 
         raise ValueError(f"Cannot cast {type(value)} to {target_type}")
 
-    # ---- Простой тип ----
+    # ---- Simple type ----
     try:
         return target_type(value)  # type: ignore
     except Exception as e:

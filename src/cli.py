@@ -246,7 +246,7 @@ class DebugShell(cmd.Cmd):
         self.api.admin()
         logger.info("All commands available")
 
-    def do_execute(self, args: str):
+    def do_exec(self, args: str):
         """Run an available command
 
         - execute 'Command' arguments (positional) key=value (named)
