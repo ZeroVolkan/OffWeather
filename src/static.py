@@ -32,20 +32,6 @@ def apis():
     }
 
 
-def services():
-    from src.core.service import WeatherService, WeatherProcessor, ServiceConfig
-
-    return {
-        "WeatherService": {
-            "class": WeatherService,
-            "config": ServiceConfig,
-            "processors": [
-                WeatherProcessor,
-            ],
-        }
-    }
-
-
 def workflows():
     from src.workflow import basis
 

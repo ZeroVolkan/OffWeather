@@ -1,17 +1,15 @@
-import cmd
-import src.static as static
+import cmd, sys
 
 from loguru import logger
-from typing import Callable, cast
+from typing import cast
 from types import UnionType
-from dataclasses import dataclass
-
 
 from .core.api import WeatherAPI, ConfigAPI
 from .setting import Setting
 from .errors import ApiError, EndpointError, ConfigError, CommandError, SettingError
 from .utils import unwrap_and_cast, unwrap_union_type, parser_arguments
 
+import src.static as static
 
 class DebugShell(cmd.Cmd):
     prompt = "(debug) "
@@ -29,6 +27,7 @@ class DebugShell(cmd.Cmd):
 
         self.apis = static.apis()
         self.workflows = static.workflows()
+
 
     def do_api(self, args):
         """Manage api
@@ -293,6 +292,63 @@ class DebugShell(cmd.Cmd):
         except Exception as e:
             logger.error(f"Error workflow: {e}")
 
+    # MODIFACATE
+    def cmdloop(self, intro=None):
+        """Repeatedly issue a prompt, accept input, parse an initial prefix
+        off the received input, and dispatch to action methods, passing them
+        the remainder of the line as argument.
+        """
+        self.preloop()
+        if self.use_rawinput and self.completekey:
+            try:
+                import readline
+                self.old_completer = readline.get_completer()
+                readline.set_completer(self.complete) # type: ignore
+                if readline.backend == "editline": # type: ignore
+                    if self.completekey == 'tab':
+                        command_string = "bind ^I rl_complete"
+                    else:
+                        command_string = f"bind {self.completekey} rl_complete"
+                else:
+                    command_string = f"{self.completekey}: complete"
+                readline.parse_and_bind(command_string)
+            except ImportError:
+                pass
+        try:
+            if intro is not None:
+                self.intro = intro
+            if self.intro:
+                self.stdout.write(str(self.intro) + "\n")
+            stop = None
+            while not stop:
+                if self.cmdqueue:
+                    line = self.cmdqueue.pop(0)
+                else:
+                    if self.use_rawinput:
+                        try:
+                            line = input(self.prompt)
+                        except EOFError:
+                            line = 'EOF'
+                    else:
+                        self.stdout.write(self.prompt)
+                        self.stdout.flush()
+                        line = self.stdin.readline()
+                        if not len(line):
+                            line = 'EOF'
+                        else:
+                            line = line.rstrip('\r\n')
+                line = self.precmd(line)
+                stop = self.onecmd(line)
+                self.stdout.flush()  # CHANGE
+                stop = self.postcmd(stop, line)
+            self.postloop()
+        finally:
+            if self.use_rawinput and self.completekey:
+                try:
+                    import readline
+                    readline.set_completer(self.old_completer)
+                except ImportError:
+                    pass
 
 debug_shell = DebugShell()
 
