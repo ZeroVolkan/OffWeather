@@ -1,11 +1,11 @@
+from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import final, Any
+from typing import final, Any, Type
 from loguru import logger
 
-import itertools as it
 
-from src.errors import EndpointError, CommandError
+from src.errors import EndpointError, APIError
 from src.static import apis
 from src.utils import classproperty
 
@@ -13,6 +13,28 @@ from src.utils import classproperty
 @dataclass
 class ConfigAPI(ABC):
     pass
+
+
+class StateAPI(ABC):
+    capable: list[Type[StateAPI]] = []
+
+    @abstractmethod
+    def __init__(self, api: WeatherAPI):
+        self.api = api
+
+    @final
+    def to(self, to: StateAPI):
+        """Change state"""
+        if type(to) not in self.capable:
+            raise APIError(f"Can't change state from {self.__class__.__name__} to {to.__class__.__name__}")
+
+        to.check()
+        self.api._state = to
+
+    @abstractmethod
+    def check(self):
+        """Check safe of transaction"""
+        pass
 
 
 class WeatherEndpoint(ABC):
@@ -37,79 +59,17 @@ class WeatherEndpoint(ABC):
         pass
 
 
-class CommandAPI(ABC):
-    @classproperty
-    def name(cls) -> str:
-        return cls.__name__
-
-    @abstractmethod
-    def __init__(self, api) -> None:
-        self.api = api
-
-    @abstractmethod
-    def execute(self) -> Any:
-        pass
-
-
 class WeatherAPI(ABC):
     @classproperty
     def name(cls) -> str:
         return cls.__name__
 
     @abstractmethod
-    def __init__(self, config: ConfigAPI):
+    def __init__(self, config: ConfigAPI, init_state: type[StateAPI] = StateAPI):
         self.config = config
-
-        self._endpoints: dict[str, WeatherEndpoint] = {}
-        self._commands: dict[str, CommandAPI] = {}
-
         self.apis = apis()
-
-        self._all_commands: dict[str, CommandAPI] = {
-            command[0]: command[1]
-            for command in it.chain(
-                self.apis["WeatherAPI"]["commands"].items(),
-                self.apis[self.name]["commands"].items(),
-            )
-        }
-
-    @final
-    def add(self, endpoint: str | WeatherEndpoint):
-        """Add endpoint"""
-        name = endpoint.name if isinstance(endpoint, WeatherEndpoint) else endpoint
-
-        if name in self._endpoints:
-            raise EndpointError(f"Endpoint with name '{name}' already exists")
-
-        if isinstance(endpoint, WeatherEndpoint):
-            self._endpoints[name] = endpoint
-        else:
-            self._endpoints[name] = self.apis[self.name]["endpoints"][name](self)
-
-    @final
-    def delete(self, endpoint: str | WeatherEndpoint):
-        """Remove endpoint"""
-        name = endpoint.name if isinstance(endpoint, WeatherEndpoint) else endpoint
-
-        if name not in self._endpoints:
-            raise EndpointError(f"Endpoint with name '{name}' does not exist")
-        del self._endpoints[name]
-
-    @final
-    def get(self, endpoint: str | WeatherEndpoint) -> WeatherEndpoint:
-        """Get endpoint by name"""
-        name = endpoint.name if isinstance(endpoint, WeatherEndpoint) else endpoint
-
-        if result := self._endpoints.get(name):
-            return result
-        raise EndpointError(f"Endpoint with name '{name}' does not exist")
-
-    @final
-    def refresh(self):
-        """Refresh data for all endpoints"""
-        logger.info(f"Refreshing endpoints {self.__class__.__name__}")
-        for endpoint in self._endpoints.values():
-            endpoint.refresh()
+        self._state = init_state(self)
+        self._endpoints: dict[str, WeatherEndpoint] = {}
 
     @abstractmethod
     def check(self):
@@ -117,50 +77,61 @@ class WeatherAPI(ABC):
         pass
 
     @abstractmethod
-    def up(self):
-        """Start API"""
-        pass
+    def to(self, state: type[StateAPI]):
+        self._state.to(state(self))
+
+    def _to_name_and_instance(self, endpoint: str | type[WeatherEndpoint]) -> tuple[str, WeatherEndpoint]:
+        if isinstance(endpoint, type) and issubclass(endpoint, WeatherEndpoint):
+            return endpoint.name, endpoint(self)
+        if isinstance(endpoint, str):
+            return endpoint, self.apis[self.name]["endpoints"][endpoint](self)
+        raise TypeError(f"Invalid endpoint type: {type(endpoint)}")
+
+    def _to_name(self, endpoint: str | type[WeatherEndpoint]) -> str:
+        if isinstance(endpoint, type) and issubclass(endpoint, WeatherEndpoint):
+            return endpoint.name
+        if isinstance(endpoint, str):
+            return endpoint
+        raise TypeError(f"Invalid endpoint type: {type(endpoint)}")
 
     @final
-    def admin(self):
-        """Not-save command for gets all commands"""
-        self._commands.update(
-            {key: value(self) for key, value in self._all_commands.items()} # type: ignore
-        )
+    def add(self, endpoint: str | type[WeatherEndpoint]):
+        """Add endpoint"""
+        name, instance = self._to_name_and_instance(endpoint)
+
+        if name in self._endpoints:
+            raise EndpointError(f"Endpoint with name '{name}' already exists")
+
+        self._endpoints[name] = instance
 
     @final
-    def execute(self, command: CommandAPI | str, *args, **kwargs):
-        """Execute Command"""
-        name = command.name if isinstance(command, CommandAPI) else command
+    def delete(self, endpoint: str | type[WeatherEndpoint]):
+        """Remove endpoint"""
+        name = self._to_name(endpoint)
 
-        if result := self.commands.get(name):
-            result.execute(*args, **kwargs)
-        else:
-            raise CommandError(f"Avalible command with name '{name}' does not exist")
+        if name not in self._endpoints:
+            raise EndpointError(f"Endpoint with name '{name}' does not exist")
 
-    @property
-    def commands(self):
-        return self._commands
+        del self._endpoints[name]
 
-    @commands.setter
-    def commands(self, value: str):
-        if item := self._all_commands.get(value):
-            self.commands[value] = item
-        raise CommandError("This command don't exist in class")
+    @final
+    def get(self, endpoint: str | type[WeatherEndpoint]) -> WeatherEndpoint:
+        """Get endpoint by name"""
+        name = self._to_name(endpoint)
 
-    @commands.deleter
-    def commands(self):
-        del self._commands
-        self._commands = dict()
+        if result := self._endpoints.get(name):
+            return result
+        raise EndpointError(f"Endpoint with name '{name}' does not exist")
 
-    @property
-    def endpoints(self):
-        return self._endpoints
+    @final
+    def refresh(self, endpoint: str | type[WeatherEndpoint]):
+        """Refresh data endpoint by name"""
+        name = self._to_name(endpoint)
 
-    @endpoints.setter
-    def endpoints(self, value: str | WeatherEndpoint):
-        self.add(value)
+        if result := self._endpoints.get(name):
+            result.refresh()
+        raise EndpointError(f"Endpoint with name '{endpoint}' does not exist")
 
-    @endpoints.deleter
-    def endpoints(self):
-        self._endpoints.clear()
+    def all(self) -> list[WeatherEndpoint]:
+        """Get all endpoints"""
+        return list(self._endpoints.values())

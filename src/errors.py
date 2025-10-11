@@ -1,52 +1,16 @@
-class GeneralError(Exception):
-    pass
-
-
-class ConfigError(GeneralError):
-    pass
-
-
-class CommandError(GeneralError):
-    pass
-
+class GeneralError(Exception): ...
 
 # General Errors for api
-class ApiError(GeneralError):
-    pass
-
-
-# Endpoint Error
-class EndpointError(ApiError):
-    pass
-
-
-# General Errors for Service
-class ServiceError(GeneralError):
-    pass
-
-
-class ProcessorError(ServiceError):
-    pass
-
-
-class DataBaseError(ServiceError):
-    pass
-
+class APIError(GeneralError): ...
+class EndpointError(APIError): ...
+class RepositoryError(APIError): ...
+class ConfigError(APIError): ... # For ConfigAPI class
 
 # Connection Errors
-class ConnectionError(GeneralError):
-    pass
+class ConnectionError(GeneralError): ...
+class ResponseError(ConnectionError): ...
+class RequestError(ConnectionError): ...
 
-
-class ResponseError(ConnectionError):
-    pass
-
-
-class RequestError(ConnectionError):
-    pass
-
-
-# Other Errors
-# Error for file setting.py
+# Error for class Setting from file setting.py.
 class SettingError(Exception):
     pass

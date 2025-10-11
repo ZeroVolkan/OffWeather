@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from loguru import logger
 
 from src.core.api import WeatherAPI, ConfigAPI
-from src.errors import SettingError, ApiError
+from src.errors import SettingError, APIError
 from src.models import Coordinates
 
 
@@ -46,7 +46,7 @@ class OpenMeteoAPI(WeatherAPI):
             pass
         except Exception as e:
             logger.error(f"Unknown API error: {e}")
-            raise ApiError("Unknown API error")
+            raise APIError("Unknown API error")
 
     def check(self):
         """Check API settings"""

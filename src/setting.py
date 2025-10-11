@@ -2,8 +2,8 @@ from typing import Callable
 import toml
 import os
 
-from .errors import ConfigError
-from .utils import safe_cast, unwrap_union_type
+from src.errors import ConfigError
+from src.utils import safe_cast, unwrap_union_type
 
 
 class Setting:

@@ -1,13 +1,13 @@
-import cmd, sys
+import cmd
 
 from loguru import logger
 from typing import cast
 from types import UnionType
 
-from .core.api import WeatherAPI, ConfigAPI
-from .setting import Setting
-from .errors import ApiError, EndpointError, ConfigError, CommandError, SettingError
-from .utils import unwrap_and_cast, unwrap_union_type, parser_arguments
+from src.core.api import WeatherAPI, ConfigAPI
+from src.setting import Setting
+from src.errors import APIError, EndpointError, ConfigError, SettingError
+from src.utils import unwrap_and_cast, unwrap_union_type, parser_arguments
 
 import src.static as static
 
@@ -68,7 +68,7 @@ class DebugShell(cmd.Cmd):
                 try:
                     self.api = self.apis[self.selected]["class"](self.config)
                     logger.info(f"Created instance for API: {self.selected}")
-                except ApiError as e:
+                except APIError as e:
                     logger.error(
                         f"Failed to create instance for API: {self.selected}': {e}"
                     )
@@ -211,70 +211,19 @@ class DebugShell(cmd.Cmd):
                 return
 
     def do_status(self, args):
-        """Show status cli"""
-        print(f"{self.selected}: {self.api} - All: {', '.join(self.apis.keys())}")
+        """Show status app"""
+        print(f"{self.selected if self.selected else 'No selected'}: {self.config if self.config else "Don't have config"}")
         if self.api:
-            print(f"    Avalible: {', '.join(self.api.commands.keys()) if self.api.commands else "Don't commands available"}")
-            print(f"    Endpoint: {', '.join(self.api.endpoints.keys()) if self.api.endpoints else "Don't endpoints available"}")
-        print(f"Config: {self.config if self.config else "Don't have config"}")
-
+            print(f"    Endpoint: {', '.join(map(lambda i: i.name, self.api.all()))}")
+        print(f"All Apis: {', '.join(self.apis.keys())}")
 
     def do_exit(self, args):
         """Exit the debug shell."""
         logger.info("Debug shell stopped")
         return 1
 
-    def do_commands(self, args):
-        """List information about available commands"""
-        if not self.api:
-            print("❌ First create API")
-            return
-        if self.api.commands:
-            for name, command in self.api.commands.items():
-                print(f"Command {name}: {command.__doc__}")
-        else:
-            print("❌ No commands available")
-        return 0
-
-    def do_unsafe(self, args):
-        """Allow all available commands"""
-        if not self.api:
-            print("❌ First create API")
-            return
-
-        self.api.admin()
-        logger.info("All commands available")
-
-    def do_exec(self, args: str):
-        """Run an available command
-
-        - execute 'Command' arguments (positional) key=value (named)
-        """
-        if not self.api:
-            print("❌ First create API")
-            return
-
-        parts = args.split()
-
-        if len(parts) == 0:
-            raise ValueError("No command provided")
-
-        command = parts[0]
-        argumets, kwargs = parser_arguments(parts[1:])
-
-        try:
-            logger.info(f"Executing command {command} with params {argumets, kwargs}")
-            self.api.execute(command, *argumets, **kwargs)
-        except CommandError as e:
-            logger.error(f"Error executing command {command}: {e}")
-        except SettingError as e:
-            logger.error(f"Error setting command {command}: {e}")
-        except Exception as e:
-            logger.error(f"Unexpected error executing command {command}: {e}")
-
     def do_workflow(self, argument):
-        """Works with workflow
-
+        """
         Usage [name]
         - None: show all workflows
         - With name: run a workflow
@@ -292,63 +241,6 @@ class DebugShell(cmd.Cmd):
         except Exception as e:
             logger.error(f"Error workflow: {e}")
 
-    # MODIFACATE
-    def cmdloop(self, intro=None):
-        """Repeatedly issue a prompt, accept input, parse an initial prefix
-        off the received input, and dispatch to action methods, passing them
-        the remainder of the line as argument.
-        """
-        self.preloop()
-        if self.use_rawinput and self.completekey:
-            try:
-                import readline
-                self.old_completer = readline.get_completer()
-                readline.set_completer(self.complete) # type: ignore
-                if readline.backend == "editline": # type: ignore
-                    if self.completekey == 'tab':
-                        command_string = "bind ^I rl_complete"
-                    else:
-                        command_string = f"bind {self.completekey} rl_complete"
-                else:
-                    command_string = f"{self.completekey}: complete"
-                readline.parse_and_bind(command_string)
-            except ImportError:
-                pass
-        try:
-            if intro is not None:
-                self.intro = intro
-            if self.intro:
-                self.stdout.write(str(self.intro) + "\n")
-            stop = None
-            while not stop:
-                if self.cmdqueue:
-                    line = self.cmdqueue.pop(0)
-                else:
-                    if self.use_rawinput:
-                        try:
-                            line = input(self.prompt)
-                        except EOFError:
-                            line = 'EOF'
-                    else:
-                        self.stdout.write(self.prompt)
-                        self.stdout.flush()
-                        line = self.stdin.readline()
-                        if not len(line):
-                            line = 'EOF'
-                        else:
-                            line = line.rstrip('\r\n')
-                line = self.precmd(line)
-                stop = self.onecmd(line)
-                self.stdout.flush()  # CHANGE
-                stop = self.postcmd(stop, line)
-            self.postloop()
-        finally:
-            if self.use_rawinput and self.completekey:
-                try:
-                    import readline
-                    readline.set_completer(self.old_completer)
-                except ImportError:
-                    pass
 
 debug_shell = DebugShell()
 

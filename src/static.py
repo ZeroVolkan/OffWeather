@@ -1,23 +1,15 @@
 def apis():
     from src.core.api import WeatherAPI, ConfigAPI
-    from src.core.commands import Add, Refresh, Delete, Data
 
     from src.open_meteo.api import OpenMeteoAPI, OpenMeteoConfig
     from src.open_meteo.forecast import ForecastEndpoint
     from src.open_meteo.geo import GeoEndpoint
-    from src.open_meteo.commands import SelectGeo
 
     return {
         "WeatherAPI": {
             "class": WeatherAPI,
             "config": ConfigAPI,
             "endpoints": [],
-            "commands": {
-                "add": Add,
-                "refresh": Refresh,
-                "delete": Delete,
-                "data": Data,
-            },
         },
         "OpenMeteoAPI": {
             "class": OpenMeteoAPI,
@@ -26,7 +18,6 @@ def apis():
                 "forecast": ForecastEndpoint,
                 "geo": GeoEndpoint,
             },
-            "commands": {"select_geo": SelectGeo},
         },
         # Add new APIs here
     }
