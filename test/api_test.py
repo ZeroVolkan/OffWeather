@@ -1,5 +1,5 @@
 from __future__ import annotations
-from src.core.api import StateAPI, WeatherAPI, WeatherEndpoint, ConfigAPI
+from src.core.api import StateAPI, BaseAPI, WeatherEndpoint, ConfigAPI
 from src.errors import APIError
 
 from dataclasses import dataclass
@@ -45,7 +45,7 @@ class DownStateAPI(StateAPI):
         pass
 
 
-class TestWeatherAPI(WeatherAPI):
+class TestWeatherAPI(BaseAPI):
     def __init__(self, config: TestConfigAPI, init_state=DownStateAPI):
         super().__init__(config, init_state=init_state)
         self.secret = config.secret
@@ -61,7 +61,7 @@ class TestWeatherAPI(WeatherAPI):
 
 
 class GiveMeHelloEndpoint(WeatherEndpoint):
-    def __init__(self, api: WeatherAPI):
+    def __init__(self, api: BaseAPI):
         super().__init__(api)
         self.data = {}
         self._secret = True

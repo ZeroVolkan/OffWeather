@@ -33,7 +33,7 @@ def unwrap_union_type[T](union_type: type[T] | UnionType) -> T:
             raise ValueError("Union type must contain only one non-None type")
         return non_none_types[0]
 
-    return union_type
+    return union_type  # type: ignore
 
 
 def safe_unwrap_union_type(union_type: type | UnionType, default_type: type) -> type:

@@ -1,23 +1,25 @@
 def apis():
-    from src.core.api import WeatherAPI, ConfigAPI
+    from src.core.api import BaseAPI, ConfigAPI
 
     from src.open_meteo.api import OpenMeteoAPI, OpenMeteoConfig
     from src.open_meteo.forecast import ForecastEndpoint
     from src.open_meteo.geo import GeoEndpoint
 
     return {
-        "WeatherAPI": {
-            "class": WeatherAPI,
+        "BaseAPI": {
+            "class": BaseAPI,
             "config": ConfigAPI,
-            "endpoints": [],
+            "endpoints": {},
+            "paths": {},
         },
         "OpenMeteoAPI": {
             "class": OpenMeteoAPI,
             "config": OpenMeteoConfig,
             "endpoints": {
-                "forecast": ForecastEndpoint,
-                "geo": GeoEndpoint,
+                "ForecastEndpoint": ForecastEndpoint,
+                "GeoEndpoint": GeoEndpoint,
             },
+            "paths": {"InitMeteoState": set()},
         },
         # Add new APIs here
     }
