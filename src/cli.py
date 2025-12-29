@@ -29,6 +29,21 @@ class DebugShell(cmd.Cmd):
         self.apis = static.apis()
         self.workflows = static.workflows()
 
+
+    def do_run(self, args):
+        """Run API"""
+        if self.api:
+            try:
+                args, kwargs = parser_arguments(args.split())
+                self.api.run(**kwargs)
+            except Exception as e:
+                logger.error(f"Error running API: {e}")
+        else:
+            logger.error(
+                f"Don't have instance for API: {self.selected if self.selected else 'Don"t selected'}"
+            )
+
+
     def do_api(self, args):
         """Manage api
 
@@ -92,16 +107,6 @@ class DebugShell(cmd.Cmd):
                     print(f"Instance: {self.api}")
                 else:
                     print(f"Don't have instance for API: {self.selected}")
-            case "run":
-                if self.api:
-                    try:
-                        self.api.run()
-                    except Exception as e:
-                        pass
-                else:
-                    logger.error(
-                        f"Don't have instance for API: {self.selected if self.selected else 'Don"t selected'}"
-                    )
             case _:
                 print("Invalid command.")
                 print(self.do_api.__doc__)
@@ -183,6 +188,9 @@ class DebugShell(cmd.Cmd):
                 annotation = cast(UnionType, self.config.__annotations__.get(param))
 
                 try:
+                    if len(values) == 1:
+                        values = values[0]
+
                     annotation = unwrap_union_type(annotation)
                     values = unwrap_and_cast(annotation, values)
 

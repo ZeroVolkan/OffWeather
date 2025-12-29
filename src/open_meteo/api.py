@@ -1,4 +1,5 @@
 import requests
+from typing import cast
 from requests_cache import CachedSession
 from retry_requests import retry
 from dataclasses import dataclass
@@ -52,12 +53,14 @@ class OpenMeteoAPI(BaseAPI):
 
 class ClarificationState(BaseState):
     def __init__(self, api: OpenMeteoAPI):
-        self.api = api
+        self.api: OpenMeteoAPI = api
         # Check
         if self.api.id is None and self.api.city is None:
             raise ConfigError("Please set at least one setting: id, city")
 
     def run(self, **kwargs):
+        id = int(k) if (k := kwargs.get("id")) else None
+
         try:
             geo = self.api.get("GeoEndpoint")
         except EndpointError:
@@ -65,20 +68,28 @@ class ClarificationState(BaseState):
             geo = self.api.get("GeoEndpoint")
 
         geo.refresh()
-        result = self.api.data.get("GeoList")
+        geo_list_raw = self.api.data.get('GeoList')
 
-        if result is None:
-            logger.error("GeoList not found")
-            raise DataError("GeoList not found")
-        else:
-            ln = len(result.results)
+        if geo_list_raw and isinstance(geo_list_raw, GeoList):
+            geo_list: GeoList = geo_list_raw
+            ln = len(geo_list.results)
+
             if ln == 0:
                 logger.error("Information not found")
                 raise ResponseError("Information not found")
             elif ln == 1:
-                self.api.data["GeoList"] = result[0]
+                self.api.data["GeoList"] = geo_list.results[0]
+            elif id and id in map(lambda i: i.id, self.api.data["GeoList"].results):
+                for i in geo_list.results:
+                    if i.id == id:
+                        self.api.coordinates = Coordinates(latitude=i.latitude, longitude=i.longitude)
+                        self.api.to(MainState)
+                        break
             else:
                 logger.info("Multiple Geo found, need to select")
+        else:
+            logger.error("GeoList not found")
+            raise DataError("GeoList not found")
 
     def to(self, state: BaseState) -> None:
         self.api._state = state
