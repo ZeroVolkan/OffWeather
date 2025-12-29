@@ -1,44 +1,22 @@
-from pydantic import BaseModel
 from loguru import logger
+from typing import cast
+
 import requests
 
-from src.core.api import WeatherEndpoint
+from src.core.api import BaseEndpoint
 from src.errors import ResponseError, SettingError
+from .api import OpenMeteoAPI
+from .schemas import GeoList, Geo
 
 
-class DataGeoEndpoint(BaseModel):
-    id: int
-    name: str
-    latitude: float
-    longitude: float
-    elevation: float
-    feature_code: str
-    country_code: str
-    admin1_id: int
-    admin2_id: int
-    admin3_id: int
-    admin4_id: int
-    timezone: str
-    population: int
-    postcodes: list[str]
-    country_id: int
-    country: str
-    admin1: str
-    admin2: str
-    admin3: str
-    admin4: str
-
-
-class DataGeoEndpointList(BaseModel):
-    results: list[DataGeoEndpoint]
-
-
-class GeoEndpoint(WeatherEndpoint):
+class GeoEndpoint(BaseEndpoint):
     def __init__(
         self,
         api,
     ):
-        super().__init__(api)  # create attr name, api, data
+        self.api: OpenMeteoAPI = cast(OpenMeteoAPI, api)
+        self.data = {}
+
         self.url = "https://geocoding-api.open-meteo.com/v1/search"
 
         self.id = self.api.id
@@ -49,7 +27,7 @@ class GeoEndpoint(WeatherEndpoint):
 
         self.check()
 
-    def refresh(self, forced: bool = False):
+    def refresh(self):
         session: requests.Session = self.api.session
 
         params = {
@@ -59,14 +37,13 @@ class GeoEndpoint(WeatherEndpoint):
             "count": self.count,
         }
 
-        response = session.get(self.url, params=params)
+        response: requests.Response = session.get(self.url, params=params)
 
         if response.status_code != 200:
             logger.error(f"Error network request failed: {response.status_code}")
             raise ResponseError(f"Error network request failed: {response.status_code}")
 
-        response_data = response.json()
-        self.data["DataGeoEndpoint"] = DataGeoEndpointList(**response_data["results"])
+        self.api.data["GeoList"] = GeoList(**response.json())
 
     def check(self):
         """Check settings of Endpoint"""

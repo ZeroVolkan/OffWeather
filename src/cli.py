@@ -1,16 +1,15 @@
 import cmd
-import src.static as static
 
 from loguru import logger
-from typing import Callable, cast
+from typing import cast
 from types import UnionType
-from dataclasses import dataclass
 
+from src.core.api import BaseAPI, ConfigAPI
+from src.setting import Setting
+from src.errors import APIError, EndpointError, ConfigError, SettingError
+from src.utils import unwrap_and_cast, unwrap_union_type, parser_arguments
 
-from .core.api import WeatherAPI, ConfigAPI
-from .setting import Setting
-from .errors import ApiError, EndpointError, ConfigError, CommandError, SettingError
-from .utils import unwrap_and_cast, unwrap_union_type, parser_arguments
+import src.static as static
 
 
 class DebugShell(cmd.Cmd):
@@ -19,7 +18,7 @@ class DebugShell(cmd.Cmd):
 
     def __init__(self):
         super().__init__()
-        self.api: WeatherAPI | None = None
+        self.api: BaseAPI | None = None
         self.config: ConfigAPI | None = None
         self.selected: str | None = None
 
@@ -34,11 +33,12 @@ class DebugShell(cmd.Cmd):
         """Manage api
 
         Usage: api [select|list] <api_name>
-        select <api_name> : Select an API
-        list : List available APIs
-        up: Instance Api create
-        down: Instance Api delete
-        show: Show selected API information
+        - select <api_name> : Select an API
+        - list : List available APIs
+        - up: Instance Api create
+        - down: Instance Api delete
+        - show: Show selected API information
+        - run: Run selected API
         """
         parts = args.split(maxsplit=2)
 
@@ -69,20 +69,19 @@ class DebugShell(cmd.Cmd):
                 try:
                     self.api = self.apis[self.selected]["class"](self.config)
                     logger.info(f"Created instance for API: {self.selected}")
-                except ApiError as e:
+                except APIError as e:
                     logger.error(
                         f"Failed to create instance for API: {self.selected}': {e}"
                     )
                 except AttributeError as e:
-                    logger.error(f"Failed to find API: '{self.selected}': {e}")
+                    logger.error(f"Failed to find attribute: '{self.selected}': {e}")
             case "down":
-                if self.selected is None:
-                    print("No API selected.")
-                    return
                 if self.api:
                     del self.api
                     self.api = None
                     logger.info(f"Deleted instance for API: {self.selected}")
+                else:
+                    logger.error(f"Don't have instance for API: {self.selected}")
             case "show":
                 if self.selected is None:
                     print("No API selected.")
@@ -92,7 +91,17 @@ class DebugShell(cmd.Cmd):
                     print(f"Config: {self.config}")
                     print(f"Instance: {self.api}")
                 else:
-                    print(f"No instance for API: {self.selected}")
+                    print(f"Don't have instance for API: {self.selected}")
+            case "run":
+                if self.api:
+                    try:
+                        self.api.run()
+                    except Exception as e:
+                        pass
+                else:
+                    logger.error(
+                        f"Don't have instance for API: {self.selected if self.selected else 'Don"t selected'}"
+                    )
             case _:
                 print("Invalid command.")
                 print(self.do_api.__doc__)
@@ -212,70 +221,23 @@ class DebugShell(cmd.Cmd):
                 return
 
     def do_status(self, args):
-        """Show status cli"""
-        print(f"{self.selected}: {self.api} - All: {', '.join(self.apis.keys())}")
+        """Show status app"""
+        print(
+            f"{self.selected if self.selected else 'No selected'}: {self.config if self.config else "Don't have config"}"
+        )
         if self.api:
-            print(f"    Avalible: {', '.join(self.api.commands.keys()) if self.api.commands else "Don't commands available"}")
-            print(f"    Endpoint: {', '.join(self.api.endpoints.keys()) if self.api.endpoints else "Don't endpoints available"}")
-        print(f"Config: {self.config if self.config else "Don't have config"}")
-
+            endpoints = ", ".join(map(lambda i: i.name(), self.api.all())) # type: ignore
+            print(f"    Endpoint: {endpoints if endpoints else 'Not Found'}")
+            print(f"    State: {self.api.state}")
+        print(f"All Apis: {', '.join(self.apis.keys())}")
 
     def do_exit(self, args):
         """Exit the debug shell."""
         logger.info("Debug shell stopped")
         return 1
 
-    def do_commands(self, args):
-        """List information about available commands"""
-        if not self.api:
-            print("❌ First create API")
-            return
-        if self.api.commands:
-            for name, command in self.api.commands.items():
-                print(f"Command {name}: {command.__doc__}")
-        else:
-            print("❌ No commands available")
-        return 0
-
-    def do_unsafe(self, args):
-        """Allow all available commands"""
-        if not self.api:
-            print("❌ First create API")
-            return
-
-        self.api.admin()
-        logger.info("All commands available")
-
-    def do_exec(self, args: str):
-        """Run an available command
-
-        - execute 'Command' arguments (positional) key=value (named)
-        """
-        if not self.api:
-            print("❌ First create API")
-            return
-
-        parts = args.split()
-
-        if len(parts) == 0:
-            raise ValueError("No command provided")
-
-        command = parts[0]
-        argumets, kwargs = parser_arguments(parts[1:])
-
-        try:
-            logger.info(f"Executing command {command} with params {argumets, kwargs}")
-            self.api.execute(command, *argumets, **kwargs)
-        except CommandError as e:
-            logger.error(f"Error executing command {command}: {e}")
-        except SettingError as e:
-            logger.error(f"Error setting command {command}: {e}")
-        except Exception as e:
-            logger.error(f"Unexpected error executing command {command}: {e}")
-
     def do_workflow(self, argument):
-        """Works with workflow
-
+        """
         Usage [name]
         - None: show all workflows
         - With name: run a workflow

@@ -36,5 +36,4 @@ class FullDataResponse(BaseModel):
     extended_weather: ExtendedWeather
 
 
-# ----- Universal response -----
-OpenMeteoResponse = Union[ClarificationResponse, FullDataResponse]
+UniversalResponse = Union[ClarificationResponse, FullDataResponse]

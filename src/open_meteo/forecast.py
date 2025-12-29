@@ -1,23 +1,21 @@
 from loguru import logger
+from typing import cast
 import requests
 
-from src.core.api import WeatherEndpoint
+from src.core.api import BaseEndpoint
 from src.errors import SettingError, ResponseError
+from src.open_meteo.api import OpenMeteoAPI
 
 
-class ForecastEndpoint(WeatherEndpoint):
-    def __init__(
-        self,
-        api,
-    ):
-        super().__init__(api)
+class ForecastEndpoint(BaseEndpoint):
+    def __init__(self, api):
+        self.meteo: OpenMeteoAPI = cast(OpenMeteoAPI, api)
         self.url = "https://api.open-meteo.com/v1/forecast"
-
-        self.latitude = self.api.coordinates.latitude
-        self.longitude = self.api.coordinates.longitude
+        self.check()
+        self.latitude, self.longitude = self.meteo.coordinates
 
     def refresh(self):
-        session: requests.Session = self.api.session
+        session: requests.Session = self.meteo.session
 
         params = {
             "latitude": self.latitude,
@@ -69,6 +67,6 @@ class ForecastEndpoint(WeatherEndpoint):
 
     def check(self):
         """Check settings of Endpoint"""
-        if self.latitude is None or self.longitude is None:
+        if self.meteo.coordinates is None:
             logger.error("Coordinates not specified")
             raise SettingError("Coordinates not specified")

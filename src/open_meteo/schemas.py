@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 from enum import Enum
 
-from src.models import Coordinates
+from src.schemas import ExtendedWeather
 
 
-# ----- Weather code Enum -----
+# Weather code Enum
 class WeatherCode(Enum):
     CLEAR_SKY = 0
     MAINLY_CLEAR = 1
@@ -68,20 +68,40 @@ class WeatherCode(Enum):
         }.get(self, "Unknown weather code")
 
 
-# ----- Request -----
-class GeoRequest(BaseModel):
-    id: int | None = None
-    city: str
-    language: str
+# Request API
+class Geo(BaseModel):
+    id: int
+    name: str
+    latitude: float
+    longitude: float
+
+    elevation: float | None = None
+    feature_code: str
+    country_code: str
+
+    admin1_id: int | None = None
+    admin2_id: int | None = None
+    admin3_id: int | None = None
+    admin4_id: int | None = None
+
+    timezone: str
+    population: int | None = None
+    postcodes: list[str] | None = None
+
+    country_id: int
     country: str
-    count: int = 1
+    admin1: str
+    admin2: str | None = None
+    admin3: str | None = None
+    admin4: str | None = None
 
 
-class ForecastRequest(BaseModel):
-    coordinates: Coordinates
+
+class GeoList(BaseModel):
+    results: list[Geo]
 
 
-# ----- Current -----
+# Current
 class CurrentWeather(BaseModel):
     weather_code: WeatherCode
     temperature: float
@@ -92,7 +112,7 @@ class CurrentWeather(BaseModel):
     wind_gusts: float
 
 
-# ----- Daily -----
+# Daily
 class DailyWeather(BaseModel):
     date: int  # unixtime (timeformat=unixtime)
     weather_code: WeatherCode
@@ -120,7 +140,7 @@ class DailyWeather(BaseModel):
     wind_direction_dominant: float
 
 
-# ----- Main model -----
-class Weather(BaseModel):
+# Main model
+class OpenMeteoWeather(ExtendedWeather, BaseModel):
     current: CurrentWeather
     daily: list[DailyWeather]
